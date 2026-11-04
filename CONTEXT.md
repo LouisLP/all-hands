@@ -28,6 +28,12 @@ _Avoid_: Prompt, task
 **Spectator**: The visitor. Drives the Build by scrolling, and otherwise only watches or skips it.
 _Avoid_: User, player
 
+**Storyboard**: The authored script of the whole Build: an ordered list of Beats.
+_Avoid_: Script, sequence, timeline
+
+**Beat**: One named moment in the Storyboard, such as a Teammate resizing the name or the Delegator rejecting it.
+_Avoid_: Step, scene, clip
+
 **Turn**: The beat where the Delegator rejects the whole grey page, which sets off the arrival of colour.
 
 **Landing**: The final beat of the Build. The camera returns to the hero, the Team leaves, and the page unpins into the finished page.
