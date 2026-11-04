@@ -34,6 +34,10 @@ _Avoid_: Script, sequence, timeline
 **Beat**: One named moment in the Storyboard, such as a Teammate resizing the name or the Delegator rejecting it.
 _Avoid_: Step, scene, clip
 
+**Track**: The tall scroll length the engine adds below the pinned page. Scroll position along it sets the Build's progress.
+
+**Camera**: The pan and zoom applied to the whole page during the Build, with its own lane in each Beat.
+
 **Turn**: The beat where the Delegator rejects the whole grey page, which sets off the arrival of colour.
 
 **Landing**: The final beat of the Build. The camera returns to the hero, the Team leaves, and the page unpins into the finished page.
