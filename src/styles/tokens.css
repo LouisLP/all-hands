@@ -1,0 +1,12 @@
+:root {
+  --mandarin: #fd550a;
+  --forest: #015d47;
+  --cream: #f3e8d2; /* Estimated. Confirmed in the final-copy issue. */
+  --crest: #e0f354;
+  --ink: #012a20;
+
+  --font-display: Anton, Impact, 'Arial Narrow', sans-serif;
+  --font-body: Archivo, system-ui, sans-serif;
+
+  --gutter: max(16px, 2vw);
+}
