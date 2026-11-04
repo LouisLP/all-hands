@@ -1,0 +1,491 @@
+<!doctype html>
+<!--
+  PROTOTYPE, throw me away. Answers #4: what should the theme and type look like?
+
+  Three variants of the finished page, each shown at four Build stages:
+  ?variant=A|B|C  &stage=canvas|type|colour|finished
+
+  Run: open prototypes/theme-type/index.html
+  Keys: left/right = variant, 1-4 = stage, c = contrast panel
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PROTOTYPE: theme and type</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;600&family=Gloock&family=Instrument+Sans:wght@400;600&family=Anybody:wdth,wght@50..150,100..900&family=Hanken+Grotesk:wght@400;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+/* ---------- tokens ---------- */
+:root {
+  --mandarin: #FD550A;
+  --forest: #015D47;
+  --cream: #F3E8D2;
+  --crest: #E0F354;
+  --ink: #012A20; /* proposed fifth colour: the only dark that carries text on Mandarin */
+  --scale: 1;
+}
+/* Type stage: poster type and shapes, no colour yet. Grey twins keep the same light/dark relationships. */
+[data-stage="type"] {
+  --mandarin: #B4B4B2;
+  --forest: #4A4A48;
+  --cream: #F0F0EE;
+  --crest: #FFFFFF;
+  --ink: #1B1B1B;
+}
+
+* { box-sizing: border-box; margin: 0; }
+html { scroll-behavior: smooth; }
+body { background: var(--cream); color: var(--ink); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+a { color: inherit; }
+a:focus-visible { outline: 3px solid currentColor; outline-offset: 3px; }
+main[hidden] { display: none; }
+main *, main { transition: background-color .6s, color .6s, border-color .6s; }
+.btn { display: inline-block; background: var(--crest); color: var(--ink); text-decoration: none; }
+
+/* ---------- canvas stage: neutral start, default type, grey boxes ---------- */
+[data-stage="canvas"] { --scale: .24; }
+[data-stage="canvas"] body { background: #E9E9E6 radial-gradient(#BEBEBA 1px, transparent 1px) 0 0 / 20px 20px; }
+[data-stage="canvas"] main *:not(.chrome, .chrome *) {
+  font-family: system-ui, sans-serif !important;
+  font-weight: 400 !important;
+  font-stretch: 100% !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  color: #1B1B1B !important;
+  background-color: transparent !important;
+  border-color: #B0B0AC !important;
+  border-radius: 0 !important;
+}
+[data-stage="canvas"] main :is(header, section, footer, .tile) { background-color: #F7F7F5 !important; outline: 1px solid #C8C8C4; outline-offset: -1px; }
+[data-stage="canvas"] main { background: transparent !important; }
+[data-stage="canvas"] main .shape { background-color: #DCDCD8 !important; }
+[data-stage="canvas"] main .btn { background-color: #FFF !important; border: 1px solid #8A8A86 !important; }
+
+/* ---------- Team chrome: cursors, selection, Brief. Hidden from AT and gone when finished ---------- */
+.chrome { position: absolute; inset: 0; pointer-events: none; z-index: 5; }
+[data-stage="finished"] .chrome { display: none; }
+.cursor { position: absolute; left: var(--x); top: var(--y); display: flex; align-items: flex-start; font: 600 13px/1 "Instrument Sans", system-ui, sans-serif; }
+.cursor svg { width: 20px; height: 20px; margin-right: -3px; filter: drop-shadow(0 1px 1px rgb(0 0 0 / .35)); }
+.cursor svg path { fill: var(--c-bg); stroke: #FFF; stroke-width: 1.5; }
+.cursor span { margin-top: 14px; padding: 5px 8px; background: var(--c-bg); color: var(--c-fg); border: 1.5px solid #FFF; }
+/* Every label pair passes AA. Cursors keep their colour from the first stage, so the Team reads as the source of colour. */
+.delegator { --c-bg: #015D47; --c-fg: #F3E8D2; }
+.designer { --c-bg: #FD550A; --c-fg: #012A20; }
+.agent { --c-bg: #F3E8D2; --c-fg: #012A20; }
+.agent svg path { stroke: #012A20; }
+.agent span { border-color: #012A20; }
+.backend { --c-bg: #012A20; --c-fg: #F3E8D2; }
+.brief { position: absolute; left: var(--x); top: var(--y); width: 250px; padding: 10px 12px; background: #FFF; color: #1B1B1B; border: 1.5px solid #015D47; font: 400 14px/1.35 "Instrument Sans", system-ui, sans-serif; box-shadow: 0 6px 18px rgb(0 0 0 / .18); }
+.brief b { display: block; font-weight: 600; color: #015D47; margin-bottom: 2px; }
+[data-stage="canvas"] .brief.later, [data-stage="type"] .brief.later { display: none; }
+
+/* ---------- A: Wood type. Tall condensed caps, hard edges, full-bleed bands ---------- */
+[data-v="A"] { font: 400 18px/1.45 Archivo, sans-serif; }
+[data-v="A"] .disp { font-family: Anton, sans-serif; font-weight: 400; text-transform: uppercase; line-height: .98; }
+.a-hero { position: relative; min-height: 100svh; background: var(--mandarin); color: var(--ink); padding: 1.6vw 2vw; display: grid; grid-template-rows: auto 1fr auto; gap: 1vw; }
+.a-top { display: flex; justify-content: space-between; font-weight: 600; }
+.a-hero h1 { align-self: center; }
+.a-name { display: block; font-size: calc(min(27.4vw, 50svh) * var(--scale)); line-height: .95; }
+.a-role { display: block; font-size: calc(min(14.3vw, 26svh) * var(--scale)); line-height: 1.02; }
+.a-foot { display: grid; grid-template-columns: 1fr auto 1fr; gap: 2vw; align-items: end; }
+.a-foot p { max-width: 34ch; font-weight: 600; }
+.a-hero .btn { font: 400 28px/1 Anton, sans-serif; text-transform: uppercase; padding: 16px 28px; border: 3px solid var(--ink); }
+.a-shapes { display: flex; justify-content: flex-end; height: 12svh; gap: 0; }
+.a-shapes i { display: block; height: 100%; aspect-ratio: 1; }
+.a-q1 { background: var(--forest); border-top-left-radius: 100%; }
+.a-q2 { background: var(--cream); border-bottom-right-radius: 100%; }
+.a-q3 { background: var(--ink); }
+.a-q4 { background: var(--forest); border-radius: 100% 100% 0 0 / 200% 200% 0 0; aspect-ratio: 2 !important; height: 50% !important; align-self: flex-end; }
+.a-about { display: grid; grid-template-columns: 7fr 5fr; }
+.a-about > div { padding: 5vw 2vw; }
+.a-about .l { background: var(--forest); color: var(--cream); }
+.a-about .l h2 { font-size: calc(7.4vw * max(var(--scale), .42)); }
+.a-about .r { background: var(--cream); color: var(--forest); display: flex; flex-direction: column; justify-content: flex-end; gap: 1em; font-size: 22px; }
+.a-work > h2 { background: var(--ink); color: var(--cream); padding: 12px 2vw; font-size: 28px; }
+.a-row { display: grid; grid-template-columns: 1fr 30ch auto; gap: 2vw; align-items: center; padding: 1.4vw 2vw; text-decoration: none; }
+.a-row h3 { font-size: calc(9vw * max(var(--scale), .42)); }
+.a-row .arrow { font: 400 calc(9vw * max(var(--scale), .42))/1 Anton, sans-serif; }
+.a-row small { display: block; font-size: 14px; font-weight: 600; margin-top: 6px; }
+.a-r1 { background: var(--cream); color: var(--forest); }
+.a-r2 { background: var(--mandarin); color: var(--ink); }
+.a-r3 { background: var(--forest); color: var(--cream); }
+.a-contact { background: var(--ink); color: var(--cream); padding-bottom: 24px; text-align: center; }
+.a-contact .btn { display: block; font: 400 calc(19vw * max(var(--scale), .42))/1.15 Anton, sans-serif; text-transform: uppercase; padding: 1vw 2vw; white-space: nowrap; }
+.a-contact p { margin-top: 20px; }
+
+/* ---------- B: Broadsheet. Fat serif on Cream, Mandarin only as shapes, arches and domes ---------- */
+[data-v="B"] { font: 400 19px/1.5 "Instrument Sans", sans-serif; background: var(--cream); color: var(--ink); }
+[data-v="B"] .disp { font-family: Gloock, serif; font-weight: 400; color: var(--forest); line-height: 1; }
+.b-hero { position: relative; min-height: 100svh; display: grid; grid-template-columns: 8fr 4fr; gap: 3vw; padding: 2vw 3vw 0; background: var(--cream); overflow: hidden; }
+.b-left { display: flex; flex-direction: column; justify-content: space-between; padding-bottom: 96px; }
+.b-top { font-weight: 600; color: var(--forest); }
+.b-name { display: block; font-size: calc(min(14.6vw, 34svh) * var(--scale)); letter-spacing: -.02em; line-height: .96; }
+.b-role { display: block; font-size: calc(min(6.1vw, 14svh) * var(--scale)); margin-top: .2em; }
+.b-foot { display: flex; gap: 2.4vw; align-items: center; }
+.b-foot p { max-width: 36ch; }
+.btn.b-btn { border: 2px solid var(--ink); border-radius: 999px; padding: 14px 28px; font-weight: 600; white-space: nowrap; }
+.b-totem { position: relative; align-self: end; height: 86svh; }
+.b-arch { position: absolute; inset: 0; background: var(--mandarin); border-radius: 999px 999px 0 0; }
+.b-sun { position: absolute; left: 50%; bottom: 0; width: 66%; aspect-ratio: 2; translate: -50% 0; background: var(--forest); border-radius: 999px 999px 0 0; }
+.b-dot { position: absolute; left: 50%; top: 13%; width: 26%; aspect-ratio: 1; translate: -50% 0; background: var(--cream); border-radius: 50%; }
+.b-about { display: grid; grid-template-columns: 5fr 7fr; gap: 3vw; padding: 7vw 3vw; background: var(--cream); border-top: 2px solid var(--forest); }
+.b-about h2 { font-size: calc(5vw * max(var(--scale), .5)); }
+.b-about .cols { columns: 2; column-gap: 2.4vw; }
+.b-about .cols p + p { margin-top: 1em; }
+.b-work { padding: 0 3vw 8vw; background: var(--cream); }
+.b-work > h2 { font-size: calc(5vw * max(var(--scale), .5)); margin-bottom: 3vw; }
+.b-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3vw; }
+.b-card { text-decoration: none; display: block; }
+.b-card:nth-child(2) { margin-top: 7vw; }
+.b-card:nth-child(3) { margin-top: 2vw; }
+.b-art { position: relative; height: 30vw; border-radius: 999px 999px 0 0; overflow: hidden; }
+.b-card:nth-child(1) .b-art { background: var(--forest); }
+.b-card:nth-child(2) .b-art { background: var(--mandarin); }
+.b-card:nth-child(3) .b-art { background: var(--ink); }
+.b-art i { position: absolute; display: block; border-radius: 50%; width: 46%; aspect-ratio: 1; left: 27%; bottom: 14%; }
+.b-card:nth-child(1) .b-art i { background: var(--mandarin); }
+.b-card:nth-child(2) .b-art i { background: var(--cream); }
+.b-card:nth-child(3) .b-art i { background: var(--cream); border-radius: 999px 999px 0 0; bottom: 0; }
+.b-card h3 { font-size: calc(2.9vw * max(var(--scale), .6)); margin-top: .5em; }
+.b-card small { display: block; color: var(--forest); font-weight: 600; font-size: 15px; margin-top: 8px; }
+.b-card p { font-size: 17px; margin-top: 6px; }
+.b-dome-wrap { background: var(--cream); }
+.b-contact { background: var(--forest); color: var(--cream); border-radius: 50vw 50vw 0 0; text-align: center; padding: 9vw 3vw 110px; }
+[data-v="B"] .b-contact h2 { color: var(--cream); font-size: calc(11vw * max(var(--scale), .4)); }
+.b-contact p { margin: 12px 0 24px; }
+.b-contact .btn { border-color: var(--crest); font-size: 22px; }
+
+/* ---------- C: Stadium grid. Extra-wide grotesque on Forest, every block a tile or stadium ---------- */
+[data-v="C"] { font: 400 18px/1.45 "Hanken Grotesk", sans-serif; background: var(--forest); color: var(--cream); padding: 12px; }
+[data-v="C"] .disp { font-family: Anybody, sans-serif; font-stretch: 150%; font-weight: 900; text-transform: uppercase; line-height: .95; letter-spacing: -.01em; }
+[data-v="C"] .mono { font: 500 13px/1.3 "JetBrains Mono", monospace; text-transform: uppercase; letter-spacing: .04em; }
+.c-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px; }
+.c-hero { position: relative; min-height: calc(100svh - 24px); grid-auto-rows: auto; grid-template-rows: 2fr 1fr auto; margin-bottom: 12px; background: var(--forest); }
+.tile { padding: 2vw; border-radius: 3vw; min-width: 0; }
+.c-name { grid-column: 1 / -1; background: var(--mandarin); color: var(--ink); border-radius: 999px; display: grid; place-items: center; padding: 0 2vw; }
+.c-name h1 { display: contents; }
+.c-name .n { font-size: calc(min(12.1vw, 30svh) * var(--scale)); white-space: nowrap; }
+.c-role { grid-column: 1 / span 8; background: var(--cream); color: var(--forest); border-radius: 999px; display: grid; place-items: center; padding: 0 2vw; }
+.c-role .r { font-size: calc(min(4.5vw, 12svh) * var(--scale)); font-stretch: 110% !important; white-space: nowrap; }
+.c-s1 { grid-column: span 2; background: var(--ink); border-radius: 50%; aspect-ratio: 1; align-self: center; justify-self: center; width: 100%; max-height: 100%; }
+.c-s2 { grid-column: span 2; background: var(--mandarin); border-radius: 100% 0 0 0; }
+.c-intro { grid-column: 1 / span 8; border: 2px solid var(--cream); display: flex; justify-content: space-between; gap: 2vw; align-items: center; padding: 1.4vw 2.4vw; }
+.c-intro p { max-width: 58ch; }
+.btn.c-cta { grid-column: span 4; border-radius: 999px; display: grid; place-items: center; font: 900 calc(2.5vw * max(var(--scale), .6))/1 Anybody, sans-serif; font-stretch: 125%; text-transform: uppercase; padding: 24px; }
+.c-about { grid-column: span 7; background: var(--cream); color: var(--forest); }
+.c-about h2 { font-size: calc(3.8vw * max(var(--scale), .5)); margin: .4em 0 .5em; }
+.c-now { grid-column: span 5; background: var(--ink); color: var(--cream); display: flex; flex-direction: column; justify-content: space-between; gap: 2vw; }
+.c-work { margin-top: 12px; }
+.c-work > .tile { text-decoration: none; display: flex; flex-direction: column; justify-content: space-between; gap: 4vw; min-height: 24vw; }
+.c-work h3 { font-size: calc(3vw * max(var(--scale), .6)); margin-top: .4em; }
+.c-p1 { grid-column: span 5; background: var(--mandarin); color: var(--ink); }
+.c-p2 { grid-column: span 4; background: var(--cream); color: var(--forest); }
+.c-p3 { grid-column: span 3; background: var(--ink); color: var(--cream); }
+.c-p3 h3 { font-size: calc(2.3vw * max(var(--scale), .6)) !important; }
+.c-contact { margin-top: 12px; padding-bottom: 76px; }
+.c-contact .btn { grid-column: 1 / -1; border-radius: 999px; padding: 3.6vw 2vw; text-align: center; font: 900 calc(8.2vw * max(var(--scale), .42))/1 Anybody, sans-serif; font-stretch: 150%; text-transform: uppercase; }
+.c-contact p { grid-column: 1 / -1; text-align: center; margin-top: 6px; }
+
+/* ---------- prototype bar and panel: deliberately not part of any design ---------- */
+.proto { font: 500 13px/1.3 ui-monospace, Menlo, monospace; color: #FFF; }
+.bar { position: fixed; left: 50%; top: 10px; translate: -50% 0; z-index: 100; display: flex; align-items: center; gap: 10px; padding: 7px 10px; background: #111; border: 1px solid #555; border-radius: 10px; box-shadow: 0 8px 24px rgb(0 0 0 / .4); white-space: nowrap; }
+.bar button { font: inherit; color: #FFF; background: #2A2A2A; border: 1px solid #555; border-radius: 6px; padding: 5px 9px; cursor: pointer; }
+.bar button[aria-pressed="true"] { background: #FFF; color: #111; }
+.bar .sep { width: 1px; height: 20px; background: #555; }
+.bar output.bad { color: #FF9C9C; }
+.bar output.good { color: #A8F0B4; }
+.panel { position: fixed; top: 0; right: 0; bottom: 0; width: 470px; z-index: 99; overflow: auto; background: #111; padding: 64px 18px 24px; border-left: 1px solid #555; }
+.panel[hidden] { display: none; }
+.panel h2 { font: inherit; color: #AAA; text-transform: uppercase; margin: 18px 0 6px; }
+.panel h2:first-child { margin-top: 0; }
+.panel dl { display: grid; grid-template-columns: 76px 1fr; gap: 5px 10px; }
+.panel dt { color: #AAA; }
+.panel table { border-collapse: collapse; width: 100%; table-layout: fixed; }
+.panel th { font-weight: 500; color: #AAA; font-size: 11px; padding: 3px 1px; text-align: left; overflow: hidden; }
+.panel td { padding: 0; border: 1px solid #111; }
+.panel .cell { padding: 6px 3px; text-align: center; font-size: 12px; line-height: 1.25; }
+.panel .cell b { display: block; font: 700 17px/1.1 Georgia, serif; }
+.panel .legend { color: #AAA; margin-top: 8px; }
+.panel ul { list-style: none; padding: 0; }
+.panel li { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; border-bottom: 1px solid #2A2A2A; }
+.tag-fail { color: #FF9C9C; } .tag-pass { color: #A8F0B4; }
+</style>
+</head>
+<body class="proto-root">
+
+<!-- ================= A ================= -->
+<main data-v="A" hidden>
+  <header class="a-hero">
+    <div class="a-top"><span>Berlin</span><span>Portfolio, 2026</span></div>
+    <h1 class="disp"><span class="a-name">Louis LP</span><span class="a-role">Design Engineer</span></h1>
+    <div class="a-foot">
+      <p>Years of video editing and motion design, now in the browser.</p>
+      <a class="btn" href="#a-contact">Get in touch</a>
+      <div class="a-shapes shape-row" aria-hidden="true"><i class="a-q1 shape"></i><i class="a-q2 shape"></i><i class="a-q3 shape"></i><i class="a-q4 shape"></i></div>
+    </div>
+    <div class="chrome" aria-hidden="true">
+      <div class="cursor delegator" style="--x:57%;--y:72%"><svg viewBox="0 0 20 20"><path d="M2 2l15 6-6 2.5L8.5 17z"/></svg><span>Delegator</span></div>
+      <div class="brief" style="--x:60%;--y:76.5%"><b>Delegator</b>Bigger. It should read from across the room.</div>
+      <div class="cursor designer" style="--x:34%;--y:56%"><svg viewBox="0 0 20 20"><path d="M2 2l15 6-6 2.5L8.5 17z"/></svg><span>Designer</span></div>
+      <div class="cursor agent" style="--x:82%;--y:72%"><svg viewBox="0 0 20 20"><path d="M2 2l15 6-6 2.5L8.5 17z"/></svg><span>Agent</span></div>
+      <div class="cursor backend" style="--x:12%;--y:82%"><svg viewBox="0 0 20 20"><path d="M2 2l15 6-6 2.5L8.5 17z"/></svg><span>Backend</span></div>
+    </div>
+  </header>
+  <section class="a-about" aria-labelledby="a-about-h">
+    <div class="l"><h2 class="disp" id="a-about-h">I cut video for years. Then I moved the timeline into the browser.</h2></div>
+    <div class="r"><p>I spent years as a video editor and motion designer before moving into frontend development.</p><p>Now the design and the motion happen in the code.</p></div>
+  </section>
+  <section class="a-work" aria-labelledby="a-work-h">
+    <h2 class="disp" id="a-work-h">Selected work</h2>
+    <a class="a-row a-r1" href="#"><h3 class="disp">Agile UI</h3><div>The component library I built at Agile Robots, with a Figma file that matches the CSS one-to-one.<small>Vue · Figma · Storybook</small></div><span class="arrow" aria-hidden="true">→</span></a>
+    <a class="a-row a-r2" href="#"><h3 class="disp">Colour Combos</h3><div>A browser for all 348 combinations in Sanzo Wada's 1930s colour dictionary.<small>Vue · Reka UI · Agentic AI</small></div><span class="arrow" aria-hidden="true">→</span></a>
+    <a class="a-row a-r3" href="#"><h3 class="disp">Kaki</h3><div>Grab the curve by its handles, watch a persimmon act it out, copy the CSS.<small>Svelte · cubic-bezier()</small></div><span class="arrow" aria-hidden="true">→</span></a>
+  </section>
+  <footer class="a-contact" id="a-contact">
+    <a class="btn" href="#">Get in touch</a>
+    <p>GitHub · LinkedIn · Berlin</p>
+  </footer>
+</main>
+
+<!-- ================= B ================= -->
+<main data-v="B" hidden>
+  <header class="b-hero">
+    <div class="b-left">
+      <div class="b-top">Berlin</div>
+      <h1 class="disp"><span class="b-name">Louis LP</span><span class="b-role">Design Engineer</span></h1>
+      <div class="b-foot"><a class="btn b-btn" href="#b-contact">Get in touch</a><p>Years of video editing and motion design, now in the browser.</p></div>
+    </div>
+    <div class="b-totem" aria-hidden="true"><i class="b-arch shape"></i><i class="b-dot shape"></i><i class="b-sun shape"></i></div>
+    <div class="chrome" aria-hidden="true">
+      <div class="cursor delegator" style="--x:44%;--y:12%"><svg viewBox="0 0 20 20"><path d="M2 2l15 6-6 2.5L8.5 17z"/></svg><span>Delegator</span></div>
+      <div class="brief" style="--x:47%;--y:19%"><b>Delegator</b>Let the sun do the shouting. Keep the type on Cream.</div>
+      <div class="cursor designer" style="--x:78%;--y:40%"><svg viewBox="0 0 20 20"><path d="M2 2l15 6-6 2.5L8.5 17z"/></svg><span>Designer</span></div>
+      <div class="cursor agent" style="--x:30%;--y:66%"><svg viewBox="0 0 20 20"><path d="M2 2l15 6-6 2.5L8.5 17z"/></svg><span>Agent</span></div>
+      <div class="cursor backend" style="--x:6%;--y:76%"><svg viewBox="0 0 20 20"><path d="M2 2l15 6-6 2.5L8.5 17z"/></svg><span>Backend</span></div>
+    </div>
+  </header>
+  <section class="b-about" aria-labelledby="b-about-h">
+    <h2 class="disp" id="b-about-h">I cut video for years. Then I moved the timeline into the browser.</h2>
+    <div class="cols"><p>I spent years as a video editor and motion designer before moving into frontend development.</p><p>Now the design and the motion happen in the code, one small, carefully built page at a time.</p></div>
+  </section>
+  <section class="b-work" aria-labelledby="b-work-h">
+    <h2 class="disp" id="b-work-h">Selected work</h2>
+    <div class="b-grid">
+      <a class="b-card" href="#"><div class="b-art shape-wrap" aria-hidden="true"><i class="shape"></i></div><h3 class="disp">Agile UI</h3><small>Vue · Figma · Storybook</small><p>The component library I built at Agile Robots, with a Figma file that matches the CSS one-to-one.</p></a>
+      <a class="b-card" href="#"><div class="b-art shape-wrap" aria-hidden="true"><i class="shape"></i></div><h3 class="disp">Colour Combos</h3><small>Vue · Reka UI · Agentic AI</small><p>A browser for all 348 combinations in Sanzo Wada's 1930s colour dictionary.</p></a>
+      <a class="b-card" href="#"><div class="b-art shape-wrap" aria-hidden="true"><i class="shape"></i></div><h3 class="disp">Kaki</h3><small>Svelte · cubic-bezier()</small><p>Grab the curve by its handles, watch a persimmon act it out, copy the CSS.</p></a>
+    </div>
+  </section>
+  <div class="b-dome-wrap">
+    <footer class="b-contact" id="b-contact">
+      <h2 class="disp">Say hello</h2>
+      <p>GitHub · LinkedIn · Berlin</p>
+      <a class="btn b-btn" href="#">Get in touch</a>
+    </footer>
+  </div>
+</main>
+
+<!-- ================= C ================= -->
+<main data-v="C" hidden>
+  <header class="c-grid c-hero">
+    <div class="tile c-name"><h1 class="disp"><span class="n">Louis LP</span></h1></div>
+    <div class="tile c-role"><p class="disp r">Design Engineer</p></div>
+    <i class="c-s1 shape" aria-hidden="true"></i>
+    <i class="c-s2 shape" aria-hidden="true"></i>
+    <div class="tile c-intro"><p>Years of video editing and motion design, now in the browser.</p><span class="mono">Berlin</span></div>
+    <a class="btn c-cta" href="#c-contact">Get in touch</a>
+    <div class="chrome" aria-hidden="true">
+      <div class="cursor delegator" style="--x:64%;--y:8%"><svg viewBox="0 0 20 20"><path d="M2 2l15 6-6 2.5L8.5 17z"/></svg><span>Delegator</span></div>
+      <div class="brief" style="--x:67%;--y:15%"><b>Delegator</b>Make the name fill the stadium, edge to edge.</div>
+      <div class="cursor designer" style="--x:18%;--y:48%"><svg viewBox="0 0 20 20"><path d="M2 2l15 6-6 2.5L8.5 17z"/></svg><span>Designer</span></div>
+      <div class="cursor agent" style="--x:74%;--y:60%"><svg viewBox="0 0 20 20"><path d="M2 2l15 6-6 2.5L8.5 17z"/></svg><span>Agent</span></div>
+      <div class="cursor backend" style="--x:40%;--y:84%"><svg viewBox="0 0 20 20"><path d="M2 2l15 6-6 2.5L8.5 17z"/></svg><span>Backend</span></div>
+    </div>
+  </header>
+  <section class="c-grid" aria-labelledby="c-about-h">
+    <div class="tile c-about"><p class="mono">About</p><h2 class="disp" id="c-about-h">I cut video for years. Then I moved the timeline into the browser.</h2></div>
+    <div class="tile c-now"><p>I spent years as a video editor and motion designer before moving into frontend development.</p><p>Now the design and the motion happen in the code.</p></div>
+  </section>
+  <section class="c-grid c-work" aria-label="Selected work">
+    <a class="tile c-p1" href="#"><p class="mono">Vue · Figma · Storybook</p><div><h3 class="disp">Agile UI</h3><p>The component library I built at Agile Robots, with a Figma file that matches the CSS one-to-one.</p></div></a>
+    <a class="tile c-p2" href="#"><p class="mono">Vue · Reka UI · Agentic AI</p><div><h3 class="disp">Colour Combos</h3><p>A browser for all 348 combinations in Sanzo Wada's 1930s colour dictionary.</p></div></a>
+    <a class="tile c-p3" href="#"><p class="mono">Svelte · cubic-bezier()</p><div><h3 class="disp">Kaki</h3><p>Grab the curve, watch a persimmon act it out, copy the CSS.</p></div></a>
+  </section>
+  <footer class="c-grid c-contact" id="c-contact">
+    <a class="btn" href="#">Get in touch</a>
+    <p>GitHub · LinkedIn · Berlin</p>
+  </footer>
+</main>
+
+<!-- ================= prototype chrome ================= -->
+<nav class="proto bar" aria-label="Prototype controls">
+  <button id="prev" aria-label="Previous variant">←</button>
+  <span id="label"></span>
+  <button id="next" aria-label="Next variant">→</button>
+  <span class="sep"></span>
+  <span id="stages"></span>
+  <span class="sep"></span>
+  <output id="audit"></output>
+  <button id="toggle" aria-pressed="false">contrast (c)</button>
+</nav>
+<aside class="proto panel" id="panel" hidden></aside>
+
+<script>
+const SPEC = {
+  A: {
+    name: 'Wood type',
+    display: 'Anton, caps', body: 'Archivo',
+    shape: 'Hard rectangles, quarter circles, full-bleed bands. No rounded corners.',
+    use: {
+      Mandarin: 'The hero field, one project band. Carries Ink text only.',
+      Forest: 'About panel and last project band, with Cream text. Decorative quarter circles on Mandarin.',
+      Cream: 'Text on Forest and Ink, and quiet bands with Forest text.',
+      Crest: 'Get in touch only. Hero button needs an Ink border on Mandarin. Closing band sits directly on Ink.',
+      Ink: 'Headline on Mandarin, section header and footer.',
+    },
+  },
+  B: {
+    name: 'Broadsheet',
+    display: 'Gloock', body: 'Instrument Sans',
+    shape: 'Arches, circles, a closing dome. Pill buttons.',
+    use: {
+      Mandarin: 'Shapes only: the arch and one card. Never touches text.',
+      Forest: 'All display type on Cream, the closing dome, a shape.',
+      Cream: 'The page ground. Text on the dome.',
+      Crest: 'Get in touch only. Invisible on Cream (1.01), so it needs an Ink border there.',
+      Ink: 'Body text, one card.',
+    },
+  },
+  C: {
+    name: 'Stadium grid',
+    display: 'Anybody, 150% wide, 900', body: 'Hanken Grotesk, JetBrains Mono labels',
+    shape: 'Stadiums and large-radius tiles on a tight 12px gutter.',
+    use: {
+      Mandarin: 'Name stadium and lead project tile. Carries Ink text only.',
+      Forest: 'The page ground. Text on Cream tiles.',
+      Cream: 'Text on Forest and Ink. Role stadium and a project tile.',
+      Crest: 'Get in touch only. Reads best here, directly on Forest (6.44).',
+      Ink: 'Name text, supporting tiles.',
+    },
+  },
+};
+const STAGES = [
+  ['canvas', 'canvas'],
+  ['type', 'type'],
+  ['colour', 'colour'],
+  ['finished', 'finished'],
+];
+const PALETTE = { Mandarin: '#FD550A', Forest: '#015D47', Cream: '#F3E8D2', Crest: '#E0F354', Ink: '#012A20', White: '#FFFFFF' };
+const KEYS = Object.keys(SPEC);
+
+const params = new URLSearchParams(location.search);
+const state = {
+  variant: KEYS.includes(params.get('variant')) ? params.get('variant') : 'A',
+  stage: STAGES.some(([s]) => s === params.get('stage')) ? params.get('stage') : 'finished',
+  panel: params.get('panel') === '1',
+};
+
+const lin = (v) => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+const lum = ([r, g, b]) => 0.2126 * lin(r / 255) + 0.7152 * lin(g / 255) + 0.0722 * lin(b / 255);
+const ratio = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
+const hex = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+const parse = (c) => { const m = c.match(/[\d.]+/g).map(Number); return { rgb: m.slice(0, 3), a: m[3] ?? 1 }; };
+const nameOf = (rgb) => Object.entries(PALETTE).find(([, h]) => hex(h).every((v, i) => v === rgb[i]))?.[0] ?? `rgb(${rgb})`;
+
+function audit() {
+  const main = document.querySelector(`main[data-v="${state.variant}"]`);
+  const pairs = new Map();
+  const walker = document.createTreeWalker(main, NodeFilter.SHOW_TEXT);
+  while (walker.nextNode()) {
+    const node = walker.currentNode;
+    const el = node.parentElement;
+    if (!node.textContent.trim() || el.closest('.chrome')) continue;
+    const css = getComputedStyle(el);
+    let bgEl = el;
+    let bg = parse(getComputedStyle(bgEl).backgroundColor);
+    while (bg.a === 0 && bgEl.parentElement) { bgEl = bgEl.parentElement; bg = parse(getComputedStyle(bgEl).backgroundColor); }
+    const fg = parse(css.color).rgb;
+    const px = parseFloat(css.fontSize);
+    const large = px >= 24 || (px >= 18.66 && parseInt(css.fontWeight) >= 700);
+    const value = ratio(fg, bg.rgb);
+    const key = `${nameOf(fg)} on ${nameOf(bg.rgb)}`;
+    const need = large ? 3 : 4.5;
+    const prior = pairs.get(key);
+    if (!prior || need > prior.need) pairs.set(key, { key, value, need, large });
+  }
+  return [...pairs.values()].sort((a, b) => a.value - b.value);
+}
+
+function matrix() {
+  const names = Object.keys(PALETTE);
+  const head = names.map((n) => `<th>${n}</th>`).join('');
+  const rows = names.map((bg) => {
+    const cells = names.map((fg) => {
+      if (fg === bg) return '<td style="background:#222"></td>';
+      const v = ratio(hex(PALETTE[fg]), hex(PALETTE[bg]));
+      const tag = v >= 4.5 ? 'AA' : v >= 3 ? 'large' : 'decor';
+      return `<td><div class="cell" style="background:${PALETTE[bg]};color:${PALETTE[fg]}"><b>Aa</b>${v.toFixed(2)}<br>${tag}</div></td>`;
+    }).join('');
+    return `<tr>${cells}</tr>`;
+  }).join('');
+  return `<table><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function renderPanel(pairs) {
+  const s = SPEC[state.variant];
+  const use = Object.entries(s.use).map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
+  const list = pairs.map((p) => `<li><span>${p.key}${p.large ? ' (large)' : ''}</span><span class="${p.value >= p.need ? 'tag-pass' : 'tag-fail'}">${p.value.toFixed(2)} / ${p.need}</span></li>`).join('');
+  document.getElementById('panel').innerHTML = `
+    <h2>${state.variant}: ${s.name}, stage: ${state.stage}</h2>
+    <dl><dt>Display</dt><dd>${s.display}</dd><dt>Body</dt><dd>${s.body}</dd><dt>Shape</dt><dd>${s.shape}</dd></dl>
+    <h2>Colour use</h2><dl>${use}</dl>
+    <h2>Text pairs on this page, measured live</h2><ul>${list}</ul>
+    <h2>All pairs: text colour across, ground in each row</h2>${matrix()}
+    <p class="legend">AA = 4.5+, large = 3+ (24px and up), decor = shapes only. Cream is estimated. Ink is proposed.</p>`;
+}
+
+let auditTimer;
+function render() {
+  document.documentElement.dataset.stage = state.stage;
+  document.querySelectorAll('main').forEach((m) => { m.hidden = m.dataset.v !== state.variant; });
+  const s = SPEC[state.variant];
+  document.getElementById('label').textContent = `${state.variant} (${s.name})`;
+  document.getElementById('stages').innerHTML = STAGES.map(([k, l], i) => `<button data-stage-btn="${k}" aria-pressed="${k === state.stage}">${i + 1} ${l}</button>`).join(' ');
+  document.getElementById('toggle').setAttribute('aria-pressed', String(state.panel));
+  document.getElementById('panel').hidden = !state.panel;
+  const url = new URL(location.href);
+  url.searchParams.set('variant', state.variant);
+  url.searchParams.set('stage', state.stage);
+  history.replaceState(null, '', url);
+  clearTimeout(auditTimer);
+  auditTimer = setTimeout(() => {
+    const pairs = audit();
+    const failing = pairs.filter((p) => p.value < p.need);
+    const worst = pairs[0];
+    const out = document.getElementById('audit');
+    out.className = failing.length ? 'bad' : 'good';
+    out.textContent = failing.length ? `${failing.length} failing` : `all text passes, min ${worst.value.toFixed(2)}`;
+    renderPanel(pairs);
+    window.__audit = { variant: state.variant, stage: state.stage, pairs, failing };
+  }, 700);
+}
+
+function cycle(d) { state.variant = KEYS[(KEYS.indexOf(state.variant) + d + KEYS.length) % KEYS.length]; scrollTo(0, 0); render(); }
+document.getElementById('prev').onclick = () => cycle(-1);
+document.getElementById('next').onclick = () => cycle(1);
+document.getElementById('toggle').onclick = () => { state.panel = !state.panel; render(); };
+document.getElementById('stages').onclick = (e) => { const k = e.target.dataset.stageBtn; if (k) { state.stage = k; render(); } };
+addEventListener('keydown', (e) => {
+  if (e.target.matches('input, textarea, [contenteditable]')) return;
+  if (e.key === 'ArrowLeft') cycle(-1);
+  if (e.key === 'ArrowRight') cycle(1);
+  if (e.key === 'c') { state.panel = !state.panel; render(); }
+  const n = Number(e.key);
+  if (n >= 1 && n <= STAGES.length) { state.stage = STAGES[n - 1][0]; render(); }
+});
+render();
+</script>
+</body>
+</html>
