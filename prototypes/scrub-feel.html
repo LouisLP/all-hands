@@ -1,0 +1,448 @@
+<!doctype html>
+<!--
+  PROTOTYPE, throwaway. Issue #5: does scrubbing feel right on one section with two Teammates?
+  Four ways of driving the same Build, switchable via ?variant= and the bottom bar.
+  Theme and type are stand-ins (#4 owns those). Copy is placeholder.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PROTOTYPE: scrub feel (#5)</title>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.15.1/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.15.1/dist/ScrollTrigger.min.js"></script>
+<style>
+  /* Josh Comeau-based reset, the parts this page uses */
+  *, *::before, *::after { box-sizing:border-box; }
+  *:not(dialog) { margin:0; }
+  body { line-height:1.5; -webkit-font-smoothing:antialiased; }
+  img, picture, video, canvas, svg { display:block; max-width:100%; }
+  input, button, textarea, select { font:inherit; }
+  p, h1, h2, h3, h4, h5, h6 { overflow-wrap:break-word; }
+  p { text-wrap:pretty; }
+  h1, h2, h3, h4, h5, h6 { text-wrap:balance; }
+
+  :root { --mandarin:#FD550A; --forest:#015D47; --cream:#F3E8D2; --neutral:#ECECEA; --ink:#8A8A86; }
+  html, body { background:var(--neutral); font-family:Inter, system-ui, -apple-system, sans-serif; }
+  #track { height:700vh; position:relative; }
+  #sticky { position:sticky; top:0; height:100vh; overflow:hidden; }
+  #bg { position:absolute; inset:0; }
+  #stage { position:absolute; left:50%; top:50%; width:1280px; height:720px; transform-origin:center; }
+  #stage > * { position:absolute; left:0; top:0; }
+
+  #name { font-size:44px; font-weight:900; letter-spacing:-.03em; line-height:1; white-space:nowrap; }
+  #role { font-size:28px; font-weight:700; white-space:nowrap; }
+  #tagline { font-size:22px; width:560px; min-height:1.3em; line-height:1.3; }
+  #shape { background:var(--mandarin); border-radius:50%; }
+
+  #sel { border:1.5px solid #2B7FFF; pointer-events:none; }
+  #sel i { position:absolute; width:9px; height:9px; background:#fff; border:1.5px solid #2B7FFF; }
+  #sel i:nth-child(1){left:-5px;top:-5px} #sel i:nth-child(2){right:-5px;top:-5px}
+  #sel i:nth-child(3){left:-5px;bottom:-5px} #sel i:nth-child(4){right:-5px;bottom:-5px}
+
+  #panel { left:1130px !important; top:30px !important; width:120px; padding:10px; background:#fff; border-radius:10px; box-shadow:0 2px 14px #0002; font-size:11px; color:#555; }
+  #panel b { display:block; margin-bottom:8px; font-weight:600; }
+  .swatch { display:inline-block; width:28px; height:28px; border-radius:6px; margin-right:6px; border:1px solid #0002; }
+
+  .bubble { background:#fff; padding:10px 14px; border-radius:14px 14px 14px 3px; box-shadow:0 2px 14px #0003; font-size:17px; font-weight:500; color:#222; min-width:40px; min-height:42px; white-space:nowrap; }
+  .caret { display:inline-block; width:2px; height:1em; background:currentColor; vertical-align:-.12em; margin-left:1px; }
+
+  .cursor { width:0; height:0; pointer-events:none; will-change:transform; }
+  .cursor svg { position:absolute; left:-2px; top:-2px; max-width:none; }
+  .cursor .cross { left:-12px; top:-12px; }
+  .cursor span { position:absolute; left:16px; top:20px; padding:3px 8px; border-radius:6px; color:#fff; font-size:12px; font-weight:600; white-space:nowrap; }
+
+  #after { height:60vh; display:grid; place-items:center; background:var(--forest); color:var(--cream); font-size:20px; }
+
+  /* Prototype chrome: deliberately not part of the design being judged. */
+  .tool { position:fixed; z-index:10; background:#111; color:#eee; font:12px/1.5 ui-monospace, Menlo, monospace; border-radius:10px; box-shadow:0 4px 20px #0006; }
+  #hud { bottom:12px; right:12px; padding:8px 12px; width:290px; white-space:pre; }
+  #hud.off { display:none; }
+  #hud div.try { white-space:normal; color:#999; margin-top:8px; border-top:1px solid #333; padding-top:8px; }
+  #bar { bottom:14px; left:50%; transform:translateX(-50%); display:flex; align-items:center; gap:6px; padding:6px 8px; white-space:nowrap; }
+  #bar button { all:unset; cursor:pointer; padding:3px 9px; border-radius:6px; background:#2a2a2a; }
+  #bar button:hover { background:#444; }
+  #bar button:focus-visible { outline:2px solid #fff; }
+  #bar output { min-width:230px; text-align:center; }
+  #bar .sep { width:1px; height:18px; background:#444; margin:0 4px; }
+</style>
+</head>
+<body>
+<div id="track">
+  <div id="sticky">
+    <div id="bg"></div>
+    <div id="stage">
+      <div id="shape"></div>
+      <h1 id="name">Louis</h1>
+      <p id="role">Design Engineer</p>
+      <p id="tagline"></p>
+      <div id="sel"><i></i><i></i><i></i><i></i></div>
+      <div id="panel"><b>Fill</b><span class="swatch" style="background:var(--cream)"></span><span class="swatch" style="background:var(--forest)"></span></div>
+      <div class="bubble" id="c1"></div>
+      <div class="bubble" id="c2"></div>
+      <div class="bubble" id="c3"></div>
+      <div class="cursor" id="delegator">
+        <svg width="22" height="24" viewBox="0 0 22 24"><path d="M2 2l6 19 3.5-7.5L19 11z" fill="#015D47" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        <span style="background:#015D47">Delegator</span>
+      </div>
+      <div class="cursor" id="designer">
+        <svg class="arrow" width="22" height="24" viewBox="0 0 22 24"><path d="M2 2l6 19 3.5-7.5L19 11z" fill="#C93F00" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        <svg class="cross" width="24" height="24" viewBox="0 0 24 24"><path d="M12 2v20M2 12h20" stroke="#C93F00" stroke-width="2"/></svg>
+        <span style="background:#C93F00">Designer</span>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="after">The next section would start here. Scroll back up to un-build.</div>
+
+<div class="tool" id="hud"></div>
+<div class="tool" id="bar">
+  <button id="prev" aria-label="Previous variant">←</button>
+  <output id="label"></output>
+  <button id="next" aria-label="Next variant">→</button>
+  <span class="sep"></span>
+  <button id="ease" title="Key: E"></button>
+  <span class="sep"></span>
+  <button id="dampDown" aria-label="Less damping">−</button>
+  <span id="dampLabel"></span>
+  <button id="dampUp" aria-label="More damping">+</button>
+</div>
+
+<script>
+gsap.registerPlugin(ScrollTrigger);
+const $ = id => document.getElementById(id);
+
+/* ---------- Options, all in the URL so every setup is shareable ---------- */
+const VARIANTS = {
+  A: 'Raw scrub, 1:1',
+  B: 'Damped playhead',
+  C: 'Damped + alive layer',
+  D: 'Triggered beats',
+};
+const KEYS = Object.keys(VARIANTS);
+const params = new URLSearchParams(location.search);
+const variant = VARIANTS[params.get('variant')] ? params.get('variant') : 'A';
+const eased = params.get('ease') !== 'linear';
+const damp = Number(params.get('damp')) || 0.6;
+const usesDamp = variant === 'B' || variant === 'C';
+
+function reloadWith(changes) {
+  const next = new URLSearchParams(location.search);
+  next.set('variant', variant);
+  next.set('y', Math.round(scrollY));
+  for (const [k, v] of Object.entries(changes)) next.set(k, v);
+  location.search = next.toString();
+}
+
+/* ---------- State: the Build is a plain object, the DOM is drawn from it ---------- */
+const s = {
+  delX:1340, delY:640, desX:-200, desY:680,
+  nameScale:1,
+  ink:0, bg:0,
+  selO:0, panelO:0,
+  shapeX:0, shapeY:0, shapeW:0, shapeH:0,
+  crosshair:0,
+  c1O:0, c1N:0, c2O:0, c2N:0, c3O:0, c3N:0,
+  phN:0, tagN:0,
+};
+const TEXT = {
+  c1: 'Make this loud.',
+  c2: 'Crowds the edge. Pull it in.',
+  c3: 'Approved.',
+  placeholder: 'Lorem ipsum dolor sit amet',
+  tag: 'I build the thing and the feel of it.',
+};
+const NAME = { x:80, y:70, fontSize:44, w:$('name').offsetWidth, h:$('name').offsetHeight };
+const WIDTH_OVER = 1190, WIDTH_FINAL = 820;
+const corner = scale => ({ x: NAME.x + NAME.w * scale, y: NAME.y + NAME.h * scale });
+const SCALE_OVER = WIDTH_OVER / NAME.w, SCALE_FINAL = WIDTH_FINAL / NAME.w;
+
+/* ---------- Timeline: time is authored in real seconds ---------- */
+const tl = gsap.timeline({ paused:true, defaults:{ ease:'none' } });
+const E = name => (eased ? name : 'none');
+const pos = { del:{ x:s.delX, y:s.delY }, des:{ x:s.desX, y:s.desY } };
+const beats = [];
+
+function beat(name, build) {
+  const start = tl.duration();
+  build();
+  beats.push({ name, start, end: tl.duration() });
+}
+// Travel time grows with the square root of distance. Free moves arc, drags run straight.
+function move(who, to, { drag = false, at, extra = {} } = {}) {
+  const d = Math.hypot(to.x - pos[who].x, to.y - pos[who].y);
+  const duration = 0.25 + 0.03 * Math.sqrt(d);
+  const xEase = E('power2.inOut'), yEase = E(drag ? 'power2.inOut' : 'power1.inOut');
+  tl.to(s, { [who + 'X']:to.x, duration, ease:xEase, ...extra }, at);
+  tl.to(s, { [who + 'Y']:to.y, duration, ease:yEase }, '<');
+  pos[who] = { ...to };
+  return duration;
+}
+const type = (key, len, at) => tl.to(s, { [key]:len, duration:len * 0.045 }, at);
+const fade = (key, value, at, duration = 0.2) => tl.to(s, { [key]:value, duration, ease:E('power1.out') }, at);
+const wait = t => tl.to({}, { duration:t });
+
+beat('Delegator writes a Brief', () => {
+  move('del', { x:640, y:96 });
+  fade('c1O', 1);
+  type('c1N', TEXT.c1.length);
+  wait(0.3);
+});
+beat('Designer selects the name', () => {
+  move('des', corner(1));
+  fade('selO', 1);
+  fade('c1O', 0, '<');
+  move('del', { x:980, y:330 }, { at:'<' });
+  wait(0.15);
+});
+beat('Designer resizes, too far', () => {
+  const to = corner(SCALE_OVER);
+  const dur = move('des', to, { drag:true });
+  tl.to(s, { nameScale:SCALE_OVER, duration:dur, ease:E('power2.inOut') }, '<');
+  wait(0.25);
+});
+beat('Delegator rejects', () => {
+  move('del', { x:760, y:300 });
+  fade('c2O', 1);
+  type('c2N', TEXT.c2.length);
+  wait(0.3);
+});
+beat('Designer corrects', () => {
+  const to = corner(SCALE_FINAL);
+  const dur = move('des', to, { drag:true });
+  tl.to(s, { nameScale:SCALE_FINAL, duration:dur, ease:E('power2.out') }, '<');
+  fade('c2O', 0, '>');
+  move('del', { x:300, y:620 }, { at:'<' });
+  wait(0.15);
+});
+beat('Designer fills', () => {
+  fade('panelO', 1);
+  move('des', { x:1155, y:80 }, { at:'<' });
+  fade('bg', 1, '>', 0.45);
+  move('des', { x:1190, y:80 });
+  fade('ink', 1, '>', 0.35);
+});
+beat('Designer draws a shape', () => {
+  fade('panelO', 0);
+  fade('selO', 0, '<');
+  // Kept clear of the type: Forest on Mandarin fails contrast, so they must not overlap.
+  const start = { x:620, y:390 }, end = { x:900, y:670 };
+  move('des', start, { at:'<' });
+  tl.set(s, { crosshair:1, shapeX:start.x, shapeY:start.y });
+  const dur = move('des', end, { drag:true });
+  tl.to(s, { shapeW:end.x - start.x, shapeH:end.y - start.y, duration:dur, ease:E('power2.inOut') }, '<');
+  tl.set(s, { crosshair:0 });
+});
+beat('Designer replaces the copy', () => {
+  move('des', { x:520, y:450 });
+  tl.to(s, { phN:TEXT.placeholder.length, duration:TEXT.placeholder.length * 0.02 });
+  tl.to(s, { tagN:TEXT.tag.length, duration:TEXT.tag.length * 0.04 });
+});
+beat('Delegator approves', () => {
+  move('del', { x:90, y:525 });
+  fade('c3O', 1);
+  type('c3N', TEXT.c3.length);
+  wait(0.5);
+  fade('c3O', 0);
+  move('del', { x:1340, y:760 }, { at:'<' });
+  move('des', { x:-200, y:790 }, { at:'<' });
+});
+const TOTAL = tl.duration();
+
+/* ---------- Draw: everything visible is written here, from s ---------- */
+const canvasColour = gsap.utils.interpolate('#ECECEA', '#F3E8D2');
+const inkColour = gsap.utils.interpolate('#8A8A86', '#015D47');
+const typed = { c1:'', c2:'', c3:'', tagline:'' };
+
+function placed(el, x, y, opacity) {
+  el.style.transform = `translate(${x}px, ${y}px)`;
+  if (opacity !== undefined) {
+    el.style.opacity = opacity;
+    el.style.visibility = opacity <= 0.001 ? 'hidden' : 'visible';
+  }
+}
+function setTyped(el, text, typing, showCaret) {
+  const html = text + (typing && showCaret ? '<span class="caret"></span>' : '');
+  if (el.innerHTML !== html) el.innerHTML = html;
+}
+function draw() {
+  const live = alive();
+  const caretOn = variant !== 'C' || Math.floor(gsap.ticker.time * 2.4) % 2 === 0;
+
+  $('bg').style.background = canvasColour(s.bg);
+  const ink = inkColour(s.ink);
+
+  const nameH = NAME.h * s.nameScale;
+  // Real font size, not transform: scale(), so big type is always rasterised at its drawn size.
+  $('name').style.transform = `translate(${NAME.x}px, ${NAME.y}px)`;
+  $('name').style.fontSize = NAME.fontSize * s.nameScale + 'px';
+  $('name').style.color = ink;
+  placed($('role'), NAME.x, NAME.y + nameH + 12);
+  $('role').style.color = ink;
+  placed($('tagline'), NAME.x, NAME.y + nameH + 60);
+  $('tagline').style.color = ink;
+
+  placed($('sel'), NAME.x - 6, NAME.y - 6, s.selO);
+  $('sel').style.width = NAME.w * s.nameScale + 12 + 'px';
+  $('sel').style.height = nameH + 12 + 'px';
+  placed($('panel'), 0, 0, s.panelO);
+  $('panel').style.transform = 'none';
+
+  placed($('shape'), s.shapeX, s.shapeY, s.shapeW > 0 ? 1 : 0);
+  $('shape').style.width = s.shapeW + 'px';
+  $('shape').style.height = s.shapeH + 'px';
+
+  // Bubbles sit above the pointer, so the name label below it stays clear.
+  placed($('c1'), 650, 44, s.c1O);
+  placed($('c2'), 770, 248, s.c2O);
+  placed($('c3'), 100, 473, s.c3O);
+  typed.c1 = TEXT.c1.slice(0, Math.round(s.c1N));
+  typed.c2 = TEXT.c2.slice(0, Math.round(s.c2N));
+  typed.c3 = TEXT.c3.slice(0, Math.round(s.c3N));
+  setTyped($('c1'), typed.c1, s.c1N < TEXT.c1.length, caretOn);
+  setTyped($('c2'), typed.c2, s.c2N < TEXT.c2.length, caretOn);
+  setTyped($('c3'), typed.c3, s.c3N < TEXT.c3.length, caretOn);
+
+  const ph = TEXT.placeholder.slice(0, TEXT.placeholder.length - Math.round(s.phN));
+  typed.tagline = ph + TEXT.tag.slice(0, Math.round(s.tagN));
+  const taggingNow = s.phN > 0 && s.tagN < TEXT.tag.length;
+  setTyped($('tagline'), typed.tagline, taggingNow, caretOn);
+
+  placed($('delegator'), s.delX + live.delX, s.delY + live.delY);
+  placed($('designer'), s.desX + live.desX, s.desY + live.desY);
+  $('designer').querySelector('.arrow').style.display = s.crosshair ? 'none' : 'block';
+  $('designer').querySelector('.cross').style.display = s.crosshair ? 'block' : 'none';
+
+  drawHud();
+}
+
+/* ---------- Alive layer (C only): wall-clock motion over scrubbed state, never touches s ---------- */
+let idle = 0, lastTime = 0;
+function alive() {
+  if (variant !== 'C') return { delX:0, delY:0, desX:0, desY:0 };
+  const t = gsap.ticker.time;
+  const moving = Math.abs(tl.time() - lastTime) > 0.001;
+  lastTime = tl.time();
+  idle += ((moving ? 0 : 1) - idle) * 0.04;
+  const a = 1.5 + 9 * idle;
+  return {
+    delX: a * Math.sin(t * 0.9 + 1.2) + a * 0.5 * Math.sin(t * 2.3),
+    delY: a * Math.cos(t * 1.1 + 0.4),
+    desX: a * Math.sin(t * 1.4) + a * 0.5 * Math.sin(t * 3.1 + 2),
+    desY: a * Math.cos(t * 1.7 + 2.1) * 0.8,
+  };
+}
+
+/* ---------- Drivers: the only thing that differs between A, B, C and D ---------- */
+const scrollRange = { trigger:'#track', start:'top top', end:'bottom bottom' };
+let st, targetTime = 0, runningTo = null;
+
+const beatAt = t => {
+  let i = -1;
+  beats.forEach((b, n) => { if (t >= b.start) i = n; });
+  return i;
+};
+const REVERSE_SPEED = 2, MAX_CATCH_UP = 2.5;
+function runTriggered(self) {
+  // A beat starts once scroll reaches it, then finishes on wall-clock time. Scrolling back rewinds faster.
+  // A big jump is capped at MAX_CATCH_UP seconds, so a fast flick never leaves the Team far behind.
+  const atTop = self.progress < 0.005;
+  const i = atTop ? -1 : beatAt(self.progress * TOTAL);
+  const goal = i < 0 ? 0 : beats[i].end;
+  if (goal === runningTo) return;
+  runningTo = goal;
+  const distance = Math.abs(goal - tl.time());
+  const speed = goal > tl.time() ? 1 : REVERSE_SPEED;
+  const duration = Math.min(distance / speed, MAX_CATCH_UP);
+  gsap.to(tl, { time:goal, duration, ease:'none', overwrite:true });
+}
+
+history.scrollRestoration = 'manual';
+scrollTo(0, Number(params.get('y')) || 0);
+
+if (variant === 'D') {
+  st = ScrollTrigger.create({ ...scrollRange, onUpdate:runTriggered });
+  const i = beatAt(st.progress * TOTAL);
+  if (i >= 0) { tl.time(beats[i].end); runningTo = beats[i].end; }
+} else {
+  st = ScrollTrigger.create({ ...scrollRange, animation:tl, scrub: usesDamp ? damp : true });
+  tl.progress(st.progress);
+}
+
+/* ---------- Stage fit ---------- */
+function fit() {
+  const scale = Math.min(innerWidth / 1280, innerHeight / 720);
+  $('stage').style.transform = `translate(-50%, -50%) scale(${scale})`;
+}
+addEventListener('resize', fit);
+fit();
+
+/* ---------- HUD: the state, every frame ---------- */
+let lastScroll = scrollY, lastScrollT = performance.now(), velocity = 0, dir = '·';
+function drawHud() {
+  const now = performance.now(), dt = Math.max(now - lastScrollT, 1);
+  const inst = (scrollY - lastScroll) / dt * 1000;
+  velocity += (inst - velocity) * 0.2;
+  if (scrollY > lastScroll) dir = '↓ build'; else if (scrollY < lastScroll) dir = '↑ un-build';
+  lastScroll = scrollY; lastScrollT = now;
+  targetTime = st.progress * TOTAL;
+  const i = beatAt(tl.time());
+  const hud = $('hud');
+  if (hud.classList.contains('off')) return;
+  const text =
+`PROTOTYPE #5   H hides this
+variant    ${variant}: ${VARIANTS[variant]}
+scroll     ${(st.progress * 100).toFixed(1)}%  ${dir}
+speed      ${Math.round(Math.abs(velocity))} px/s
+playhead   ${tl.time().toFixed(2)} / ${TOTAL.toFixed(2)} s
+lag        ${(targetTime - tl.time()).toFixed(2)} s
+beat       ${i + 1}/${beats.length}
+           ${i >= 0 ? beats[i].name : 'none yet'}
+typed      Brief ${typed.c1.length}/${TEXT.c1.length}  Note ${typed.c2.length}/${TEXT.c2.length}
+           Copy "${typed.tagline.slice(0, 14)}${typed.tagline.length > 14 ? '…' : ''}"`;
+  if (hud.firstChild?.nodeValue !== text) {
+    hud.innerHTML = '';
+    hud.append(text);
+    const tryIt = document.createElement('div');
+    tryIt.className = 'try';
+    tryIt.textContent = 'Try: crawl. Flick fast. Reverse. Stop mid-drag and mid-typing.';
+    hud.append(tryIt);
+  }
+}
+
+/* ---------- Bottom bar ---------- */
+function cycle(by) {
+  const i = (KEYS.indexOf(variant) + by + KEYS.length) % KEYS.length;
+  reloadWith({ variant: KEYS[i] });
+}
+const toggleEase = () => reloadWith({ ease: eased ? 'linear' : 'on' });
+const nudgeDamp = by => reloadWith({ damp: Math.max(0.1, Math.round((damp + by) * 10) / 10).toFixed(1) });
+$('label').textContent = `${variant} (${VARIANTS[variant]})`;
+$('prev').onclick = () => cycle(-1);
+$('next').onclick = () => cycle(1);
+$('ease').textContent = `eases ${eased ? 'on' : 'off'}`;
+$('ease').onclick = toggleEase;
+$('dampLabel').textContent = usesDamp ? `damp ${damp.toFixed(1)}s` : 'damp n/a';
+$('dampDown').onclick = () => usesDamp && nudgeDamp(-0.2);
+$('dampUp').onclick = () => usesDamp && nudgeDamp(0.2);
+addEventListener('keydown', e => {
+  if (e.key === 'ArrowLeft') cycle(-1);
+  if (e.key === 'ArrowRight') cycle(1);
+  if (e.key === 'e' || e.key === 'E') toggleEase();
+  if (e.key === 'h' || e.key === 'H') $('hud').classList.toggle('off');
+});
+
+gsap.ticker.add(draw);
+draw();
+
+/* ---------- Test hook ---------- */
+window.__proto = {
+  tl, s, beats, TOTAL, st, draw, variant,
+  snapshot() {
+    const round = Object.fromEntries(Object.entries(s).map(([k, v]) => [k, Math.round(v * 100) / 100]));
+    return JSON.stringify({ ...round, ...typed });
+  },
+};
+</script>
+</body>
+</html>
