@@ -5,11 +5,14 @@ import { projects } from '@/content/projects'
 
 <template>
   <section id="work" class="work" data-build="work" aria-labelledby="work-title">
-    <h2 id="work-title" class="display heading" data-build="work-heading">Selected work</h2>
+    <h2 id="work-title" class="display heading" data-build="work-heading">
+      Selected work <sup class="count mono" aria-hidden="true">({{ projects.length }})</sup>
+    </h2>
     <ProjectCard
       v-for="(project, index) in projects"
       :key="project.title"
       :project="project"
+      :index="index + 1"
       :build-name="`card${index + 1}`"
     />
   </section>
@@ -25,5 +28,10 @@ import { projects } from '@/content/projects'
   background: var(--ink);
   color: var(--cream);
   font-size: 1.75rem;
+}
+
+.count {
+  vertical-align: super;
+  line-height: 0;
 }
 </style>

@@ -34,7 +34,10 @@ The visual reference is variant A in the [theme prototype](https://github.com/Lo
 
 - **Type:** Anton caps for display, Archivo for body. Name and role fill the first viewport.
 - **Shape:** hard rectangles, quarter circles and full-bleed bands. No rounded corners.
+- **Mono:** JetBrains Mono 500 for the annotation layer only.
 - **Fonts:** self-hosted subset WOFF2, not Google Fonts.
+
+**Annotation layer:** inspired by [stripe.dev](https://stripe.dev/), a quiet technical layer over the poster type: `/ LABEL` headers on hairlines, `+` registration marks, a `[ FIG. 1 ]` frame around the hero shapes, superscript counts, square-cornered tags and `■` list bullets. Vibe only: reuse none of its code, assets or fonts. Its pale gradient, pills and bracketed keyboard shortcuts stay out, because they conflict with the palette, the no-rounded-corners rule and scroll-and-skip only.
 
 | Colour | Value | Use |
 |---|---|---|
@@ -191,7 +194,7 @@ These are starting values chosen before anything has been built. Change them onl
 | LCP | 2.5s |
 | CLS | 0.1 |
 | Initial JS, gzipped, without the engine chunk | 40 KB |
-| Fonts, total (Anton plus Archivo 400 and 600) | 100 KB |
+| Fonts, total (Anton, Archivo 400 and 600, JetBrains Mono 500) | 100 KB |
 | Everything on initial load, gzipped | 250 KB |
 
 **Engine chunk:** 60 KB gzipped, including GSAP + ScrollTrigger (measured at 45.2 KB in #2). Failing devices never request it.

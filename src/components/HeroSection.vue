@@ -1,27 +1,33 @@
 <script setup lang="ts">
+import RegistrationMarks from '@/components/RegistrationMarks.vue'
 import { profile } from '@/content/profile'
 </script>
 
 <template>
   <section id="hero" class="hero" data-build="hero" aria-labelledby="hero-title">
     <div class="inner">
-      <div class="top" data-build="hero-meta">
-        <p>{{ profile.city }}</p>
-        <p>{{ profile.edition }}</p>
+      <div class="top mono" data-build="hero-meta">
+        <p class="label">{{ profile.city }}</p>
+        <p class="label">{{ profile.edition }}</p>
       </div>
+      <RegistrationMarks data-build="hero-marks-top" />
       <h1 id="hero-title" class="display title">
         <span class="name" data-build="name">{{ profile.name }}</span>
         <span class="role" data-build="role">{{ profile.role }}</span>
       </h1>
+      <RegistrationMarks data-build="hero-marks-bottom" />
       <div class="foot">
         <p class="intro" data-build="hero-intro">{{ profile.intro }}</p>
         <a class="get-in-touch button" href="#contact" data-build="hero-button">Get in touch</a>
-        <div class="shapes" data-build="hero-shapes" aria-hidden="true">
-          <span class="shape quarter-forest" />
-          <span class="shape quarter-cream" />
-          <span class="shape block-ink" />
-          <span class="shape quarter-forest-small" />
-        </div>
+        <figure class="figure" data-build="hero-shapes" aria-hidden="true">
+          <figcaption class="caption mono">[ Fig. 1 ]</figcaption>
+          <div class="shapes">
+            <span class="shape quarter-forest" />
+            <span class="shape quarter-cream" />
+            <span class="shape block-ink" />
+            <span class="shape quarter-forest-small" />
+          </div>
+        </figure>
       </div>
     </div>
   </section>
@@ -36,17 +42,20 @@ import { profile } from '@/content/profile'
 
 .inner {
   display: grid;
-  grid-template-rows: auto 1fr auto;
-  gap: 16px;
+  grid-template-rows: auto auto 1fr auto auto;
+  gap: 12px;
   min-height: 100svh;
   padding: 16px var(--gutter);
 }
 
 .top {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 16px;
-  font-weight: 600;
+}
+
+.top p:last-child {
+  text-align: end;
 }
 
 .title {
@@ -89,6 +98,19 @@ import { profile } from '@/content/profile'
 
 .button:focus-visible {
   outline-offset: -9px;
+}
+
+.figure {
+  border: 1px solid currentColor;
+  background: radial-gradient(currentColor 1px, transparent 1px) 0 0 / 12px 12px;
+}
+
+.caption {
+  padding: 1px 8px;
+  border-block-end: 1px solid currentColor;
+  background: var(--mandarin);
+  font-size: 0.6875rem;
+  text-align: center;
 }
 
 .shapes {
@@ -143,9 +165,13 @@ import { profile } from '@/content/profile'
     gap: 2cqi;
   }
 
+  .figure {
+    justify-self: end;
+    width: fit-content;
+  }
+
   .shapes {
-    height: 12svh;
-    min-height: 48px;
+    height: max(40px, 10svh);
   }
 }
 </style>

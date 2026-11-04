@@ -6,6 +6,7 @@ import { profile } from '@/content/profile'
   <section id="about" class="about" data-build="about" aria-labelledby="about-title">
     <div class="inner">
       <div class="panel" data-build="about-panel">
+        <p class="mono label panel-label" data-build="about-label">About</p>
         <h2 id="about-title" class="display heading" data-build="about-heading">{{ profile.aboutHeading }}</h2>
       </div>
       <div class="body" data-build="about-body">
@@ -32,6 +33,10 @@ import { profile } from '@/content/profile'
 .panel {
   background: var(--forest);
   color: var(--cream);
+}
+
+.panel-label {
+  margin-block-end: 24px;
 }
 
 .heading {

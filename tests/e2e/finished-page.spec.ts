@@ -3,10 +3,10 @@ import { expect, test } from '@playwright/test'
 import { contrastRatio, requiredRatio } from '../support/contrast'
 
 const BUILD_NAMES = [
-  'hero', 'hero-meta', 'name', 'role', 'hero-intro', 'hero-button', 'hero-shapes',
-  'about', 'about-panel', 'about-heading', 'about-body',
+  'hero', 'hero-meta', 'hero-marks-top', 'name', 'role', 'hero-marks-bottom', 'hero-intro', 'hero-button', 'hero-shapes',
+  'about', 'about-panel', 'about-label', 'about-heading', 'about-body',
   'work', 'work-heading',
-  ...[1, 2, 3].flatMap(n => [`card${n}`, `card${n}-title`, `card${n}-link`, `card${n}-details`]),
+  ...[1, 2, 3].flatMap(n => [`card${n}`, `card${n}-index`, `card${n}-title`, `card${n}-link`, `card${n}-details`]),
   'contact', 'contact-button', 'footer', 'contact-links', 'colophon',
 ]
 
@@ -68,7 +68,7 @@ test('self-hosted fonts are used, and nothing animates', async ({ page }) => {
     faces: [...document.fonts].filter(f => f.status === 'loaded').map(f => `${f.family.replaceAll('"', '')} ${f.weight}`),
     animations: document.getAnimations().length,
   }))
-  expect(state.faces.sort()).toEqual(['Anton 400', 'Archivo 400', 'Archivo 600'])
+  expect(state.faces.sort()).toEqual(['Anton 400', 'Archivo 400', 'Archivo 600', 'JetBrains Mono 500'])
   expect(state.animations).toBe(0)
 })
 

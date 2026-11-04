@@ -6,7 +6,7 @@ import { profile } from '@/content/profile'
   <section id="contact" class="contact" data-build="contact" aria-labelledby="contact-title">
     <h2 id="contact-title" class="visually-hidden">Contact</h2>
     <a class="get-in-touch band" :href="`mailto:${profile.email}`" data-build="contact-button">Get in touch</a>
-    <footer class="footer" data-build="footer">
+    <footer class="footer mono" data-build="footer">
       <ul class="links" data-build="contact-links">
         <li><a :href="profile.github">GitHub</a></li>
         <li><a :href="profile.linkedin">LinkedIn</a></li>
@@ -39,20 +39,22 @@ import { profile } from '@/content/profile'
 
 .footer {
   display: grid;
-  justify-items: center;
   gap: 8px;
-  padding: 20px var(--gutter) 24px;
-  text-align: center;
+  padding: 16px var(--gutter) 24px;
 }
 
 .links {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
   align-items: center;
   gap: 0 24px;
-  padding: 0;
+  padding: 0 0 8px;
+  border-block-end: 1px solid currentColor;
   list-style: none;
+}
+
+.links li::before {
+  content: '■ ' / '';
 }
 
 .links a {
@@ -61,6 +63,6 @@ import { profile } from '@/content/profile'
 }
 
 .colophon {
-  font-size: 0.875rem;
+  text-transform: none;
 }
 </style>

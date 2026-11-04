@@ -20,6 +20,24 @@ a {
   text-transform: uppercase;
 }
 
+/* The annotation layer: small mono notes on hairlines, over the poster type. */
+.mono {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.label {
+  padding-block-end: 6px;
+  border-block-end: 1px solid currentColor;
+}
+
+.label::before {
+  content: '/ ' / '';
+}
+
 /* Crest only ever appears here. */
 .get-in-touch {
   display: block;

@@ -1,5 +1,12 @@
 /* Latin subsets from Fontsource, self-hosted in public/fonts under the OFL. */
 @font-face {
+  font-family: 'JetBrains Mono';
+  src: url('/fonts/jetbrains-mono-500.woff2') format('woff2');
+  font-weight: 500;
+  font-display: swap;
+}
+
+@font-face {
   font-family: Anton;
   src: url('/fonts/anton-400.woff2') format('woff2');
   font-weight: 400;
