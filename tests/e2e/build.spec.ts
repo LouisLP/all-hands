@@ -19,6 +19,11 @@ async function scrollTo(page: Page, y: number) {
   }, y)
 }
 
+// Evenly spaced scroll positions, because a step per few px takes too long on the whole Track.
+function stops(trackLength: number, count = 150, upTo = 1) {
+  return Array.from({ length: count }, (_, i) => Math.round(trackLength * upTo * i / count))
+}
+
 const pinnedHtml = (page: Page) => page.locator('.pinned').evaluate(el => el.outerHTML)
 
 test('the engine and GSAP load in their own chunk, after the page', async ({ page, request }) => {
@@ -40,7 +45,7 @@ test('the engine and GSAP load in their own chunk, after the page', async ({ pag
 test('the page sits inside the spec\'s structure', async ({ page }) => {
   await ready(page)
   await expect(page.locator('.build > main.pinned > .camera [data-build="hero"]')).toHaveCount(1)
-  await expect(page.locator('.build > main.pinned > .overlay[aria-hidden="true"] .cursor')).toHaveCount(2)
+  await expect(page.locator('.build > main.pinned > .overlay[aria-hidden="true"] .cursor')).toHaveCount(5)
   await expect(page.locator('.build > .track')).toHaveCount(1)
 })
 
@@ -55,6 +60,7 @@ test('below the load check there\'s no Track and no engine', async ({ browser })
   await page.goto('', { waitUntil: 'networkidle' })
   await expect(page.locator('.track')).toHaveCount(0)
   await expect(page.locator('.overlay')).toHaveCount(0)
+  await expect(page.locator('.build-line')).toBeHidden()
   expect(scripts).toHaveLength(1)
   await context.close()
 })
@@ -84,7 +90,7 @@ test('the Beat scrubs: the cursor reaches its anchor and the shapes fade in', as
   })
 
   let nearest = Number.POSITIVE_INFINITY
-  for (let y = 0; y < trackLength; y += 20) {
+  for (const y of stops(trackLength, 100, 0.25)) {
     await scrollTo(page, y)
     if (!await cursor.isVisible())
       continue
@@ -98,6 +104,159 @@ test('the Beat scrubs: the cursor reaches its anchor and the shapes fade in', as
 
   await scrollTo(page, trackLength - 1)
   await expect(shapes).toHaveCSS('opacity', '1')
+})
+
+test('the opening frame shows name, role, the Delegator and the first Brief, and nothing else', async ({ page }) => {
+  await ready(page)
+  await expect(page.locator('.cursor[data-teammate="delegator"]')).toBeVisible()
+  await expect(page.locator('.cursor[data-teammate="delegator"] .brief').first()).toHaveText('Make it a poster.')
+  await expect(page.locator('.cursor[data-teammate="delegator"] .brief').first()).toBeVisible()
+  for (const teammate of ['designer', 'backend', 'agent1', 'agent2'])
+    await expect(page.locator(`.cursor[data-teammate="${teammate}"]`)).toBeHidden()
+
+  await expect(page.locator('[data-build="name"]')).toBeVisible()
+  await expect(page.locator('[data-build="role"]')).toBeVisible()
+  const family = await page.locator('[data-build="name"]').evaluate(el => getComputedStyle(el).fontFamily)
+  expect(family).toContain('system-ui')
+  for (const name of ['hero-meta', 'hero-intro', 'hero-shapes'])
+    await expect(page.locator(`[data-build="${name}"]`)).toHaveCSS('opacity', '0')
+  await expect(page.locator('[data-build="hero-button"]')).toHaveCSS('clip-path', /inset/)
+
+  await expect(page.locator('.build-line')).toBeVisible()
+  await expect(page.locator('.build-line')).toHaveText('Scroll to build · Skip')
+})
+
+test('Skip is a real link that takes you to the finished page', async ({ page }) => {
+  const trackLength = await ready(page)
+  await scrollTo(page, trackLength / 2)
+  const skip = page.locator('.build-line a')
+  await expect(skip).toHaveAttribute('href', '#hero')
+  await skip.click()
+  await expect(page.locator('.track')).toHaveCount(0)
+  await expect(page.locator('.overlay')).toHaveCount(0)
+  await expect(page.locator('.build-line')).toBeHidden()
+  await expect(page.locator('[data-build="name"]')).toBeInViewport()
+  await expect(page.locator('html')).not.toHaveAttribute('style')
+  await expect(page.locator('.camera [style]')).toHaveCount(0)
+})
+
+test('the line stays up through the Build, fades at the Landing, and comes back on the way up', async ({ page }) => {
+  const trackLength = await ready(page)
+  const line = page.locator('.build-line')
+  await scrollTo(page, trackLength / 2)
+  await expect(line).toHaveCSS('opacity', '1')
+  await scrollTo(page, trackLength - 1)
+  expect(Number(await line.evaluate(el => getComputedStyle(el).opacity))).toBeLessThan(0.05)
+  await scrollTo(page, trackLength)
+  await expect(line).toBeHidden()
+  await scrollTo(page, trackLength / 2)
+  await expect(line).toBeVisible()
+})
+
+test('the hero type grows at a real font size, and nothing around it moves', async ({ page }) => {
+  const trackLength = await ready(page)
+  const name = page.locator('[data-build="name"]')
+  const boxes = () => page.evaluate(() => Object.fromEntries(
+    ['hero', 'title', 'name', 'role', 'hero-button', 'about', 'work', 'contact'].map((build) => {
+      const { width, height } = document.querySelector(`[data-build="${build}"]`)!.getBoundingClientRect()
+      return [build, { width: Math.round(width * 100) / 100, height: Math.round(height * 100) / 100 }]
+    }),
+  ))
+
+  const opening = await boxes()
+  await scrollTo(page, trackLength + 1)
+  const finished = await name.evaluate(el => Number.parseFloat(getComputedStyle(el).fontSize))
+  expect(finished).toBeGreaterThan(100)
+  expect(await boxes()).toEqual(opening)
+
+  await scrollTo(page, 0)
+  const sizes = new Set<string>()
+  let sawAnton = false
+  for (const y of stops(trackLength, 60, 0.25)) {
+    await scrollTo(page, y)
+    const fontSize = await name.evaluate(el => el.style.fontSize)
+    sizes.add(fontSize)
+    sawAnton ||= (await name.evaluate(el => getComputedStyle(el).fontFamily)).includes('Anton')
+    expect(await boxes(), `at scroll ${y}`).toEqual(opening)
+  }
+  expect(sizes.size).toBeGreaterThan(3)
+  expect([...sizes].map(Number.parseFloat)).toContain(finished)
+  expect(sawAnton).toBe(true)
+})
+
+test('typed text keeps its full text hidden, shows the typed part aria-hidden, and collapses at the end', async ({ page }) => {
+  const trackLength = await ready(page)
+  const heading = page.locator('[data-build="about-heading"]')
+  const full = (await heading.locator('.visually-hidden').textContent())!
+  expect(full.length).toBeGreaterThan(10)
+  await expect(heading.locator('.typed[aria-hidden="true"]')).toHaveText('')
+
+  let partial = false
+  for (const y of stops(trackLength, 400)) {
+    if (partial)
+      break
+    await scrollTo(page, y)
+    const shown = (await heading.locator('.typed').textContent())!
+    partial = shown.length > 0 && shown.length < full.length
+    if (partial) {
+      expect(full.startsWith(shown)).toBe(true)
+      await expect(heading.locator('.typed')).toHaveAttribute('data-typing')
+    }
+  }
+  expect(partial).toBe(true)
+  await expect(page.getByRole('heading', { name: full })).toHaveCount(1)
+
+  await scrollTo(page, trackLength)
+  expect(await heading.evaluate(el => el.innerHTML)).toBe(full)
+})
+
+test('Backend swaps a placeholder for the real bio', async ({ page }) => {
+  const trackLength = await ready(page)
+  const shown = page.locator('[data-build="about-body1"] .typed')
+  const seen = new Set<string>()
+  for (const y of stops(trackLength, 150, 0.6)) {
+    await scrollTo(page, y)
+    seen.add((await shown.textContent())!)
+  }
+  expect([...seen]).toContain('Placeholder text about the person this page is for.')
+  expect([...seen].some(text => text.startsWith('I spent years'))).toBe(true)
+})
+
+test('the Delegator rejects the card, then approves it, before the Agents arrive', async ({ page }) => {
+  const trackLength = await ready(page)
+  const firstSeen = new Map<string, number>()
+  const watched = {
+    tighter: { selector: '.brief[data-kind="reject"]', text: 'Tighter.' },
+    approved: { selector: '.brief[data-kind="approve"]', text: 'Yes. Do the rest.' },
+    agent1: { selector: '.cursor[data-teammate="agent1"]', text: 'Agent 1' },
+    agent2: { selector: '.cursor[data-teammate="agent2"]', text: 'Agent 2' },
+    backend: { selector: '.cursor[data-teammate="backend"]', text: 'Backend' },
+  }
+  for (const y of stops(trackLength)) {
+    await scrollTo(page, y)
+    const seen = await page.evaluate(targets => Object.entries(targets).flatMap(([name, { selector, text }]) => {
+      const el = [...document.querySelectorAll<HTMLElement>(selector)].find(el => el.textContent.includes(text))
+      return el?.checkVisibility() ? [name] : []
+    }), watched)
+    for (const name of seen) {
+      if (!firstSeen.has(name))
+        firstSeen.set(name, y)
+    }
+  }
+  expect(firstSeen.get('backend')).toBeLessThan(firstSeen.get('tighter')!)
+  expect(firstSeen.get('tighter')).toBeLessThan(firstSeen.get('approved')!)
+  expect(firstSeen.get('approved')).toBeLessThan(firstSeen.get('agent1')!)
+  expect(firstSeen.get('agent1')).toBe(firstSeen.get('agent2'))
+})
+
+test('the ambient layer runs without writing to the DOM', async ({ page }) => {
+  await ready(page)
+  await scrollTo(page, 500)
+  const before = await pinnedHtml(page)
+  await page.waitForTimeout(600)
+  expect(await pinnedHtml(page)).toBe(before)
+  const animation = await page.locator('.cursor-body').first().evaluate(el => getComputedStyle(el).animationName)
+  expect(animation).toBe('idle-drift')
 })
 
 // Required test 1
@@ -121,6 +280,7 @@ test('at the end of the Track the DOM is the prerendered page, with no overrides
   expect(result.actual).toBe(result.expected)
   expect(result.overrides).toBe(0)
   expect(result.overlayHidden).toBe(true)
+  await expect(page.locator('html')).not.toHaveAttribute('style')
 })
 
 // Required test 2

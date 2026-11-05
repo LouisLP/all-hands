@@ -9,7 +9,7 @@ import type { Storyboard } from './storyboard'
 export type Phase = 'ready' | 'finished' | 'skipped' | 'exited'
 
 export interface BuildOptions {
-  /** The `.build` element, holding `.pinned` and its `.camera`. */
+  /** The `.build` element, holding `.pinned` with its `.camera` and `.build-line`. */
   root: HTMLElement
   storyboard: Storyboard
   onPhase?: (phase: Phase) => void
@@ -74,7 +74,7 @@ export function createBuild({ root, storyboard, onPhase }: BuildOptions): Build 
     const compiled = compile(storyboard, measure(camera))
     const lanes = new Set(compiled.rows.flatMap(({ node }) => (node.kind === 'cursor' ? [node.lane] : [])))
     const overlay = createOverlay(pinned, lanes, compiled.briefs)
-    const drawing = createDrawing(compiled.rows, compiled.state, camera, overlay)
+    const drawing = createDrawing(compiled, camera, pinned.querySelector<HTMLElement>('.build-line')!, overlay)
 
     const track = document.createElement('div')
     track.className = 'track'

@@ -11,7 +11,7 @@ import { profile } from '@/content/profile'
         <p class="label">{{ profile.edition }}</p>
       </div>
       <RegistrationMarks data-build="hero-marks-top" />
-      <h1 id="hero-title" class="display title" tabindex="-1">
+      <h1 id="hero-title" class="display title" tabindex="-1" data-build="title">
         <span class="name" data-build="name">{{ profile.name }}</span>
         <span class="role" data-build="role">{{ profile.role }}</span>
       </h1>
