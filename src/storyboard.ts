@@ -4,7 +4,7 @@ import type { Storyboard } from './engine/storyboard'
 const PLACEHOLDER_BODY = 'Placeholder text about the person this page is for.'
 const PLACEHOLDER_TITLE = 'Project'
 
-// Brief wording is provisional, and #21 tunes the timing.
+// #21 tunes the timing.
 const hero: Storyboard = [
   beat('Hero: the Delegator sits alone by name and role', {
     delegator: [brief('Make it a poster.', { x: 30, y: 46 }, { inPlace: true, duration: 2.5 })],
