@@ -3,10 +3,13 @@ import { gsap } from 'gsap'
 import type {
   Action,
   BoxAction,
+  CrestAction,
   DupAction,
+  FillAction,
   FitAction,
   FreePoint,
   Lane,
+  LeaveAction,
   NoteAction,
   NudgeAction,
   PanAction,
@@ -37,7 +40,7 @@ export interface Layout {
   texts: Partial<Record<string, { text: string, systemWidthEm: number }>>
 }
 
-type Prop = 'camera' | 'presence' | 'translate' | 'opacity' | 'tokens' | 'lock' | 'offset' | 'clip' | 'text' | 'fontSize' | 'font' | 'box'
+type Prop = 'camera' | 'presence' | 'translate' | 'opacity' | 'tokens' | 'lock' | 'offset' | 'clip' | 'text' | 'fontSize' | 'font' | 'box' | 'fill' | 'crest'
 
 /** One line of the table `draw()` works through: numeric state keys and where they get written. */
 export interface Row {
@@ -80,17 +83,18 @@ interface Pose extends Point {
   scale: number
 }
 
-const AGENT_VERBS: readonly Verb[] = ['move', 'reveal', 'type', 'dup']
+const AGENT_VERBS: readonly Verb[] = ['move', 'reveal', 'type', 'dup', 'fill', 'leave']
 const LANE_VERBS: Record<Lane, readonly Verb[]> = {
-  delegator: ['brief', 'approve', 'reject'],
-  designer: ['move', 'reveal', 'box', 'type', 'nudge', 'setType'],
-  backend: ['move', 'reveal', 'replace'],
+  delegator: ['brief', 'approve', 'reject', 'leave'],
+  designer: ['move', 'reveal', 'box', 'type', 'nudge', 'setType', 'fill', 'crest', 'leave'],
+  backend: ['move', 'reveal', 'replace', 'leave'],
   agent1: AGENT_VERBS,
   agent2: AGENT_VERBS,
 }
 const CAMERA_VERBS: readonly Verb[] = ['pan', 'fit']
 
-const ENTRY: FreePoint = { x: 105, y: 105 }
+/** Where cursors come in from and go out to. */
+const OFF_SCREEN: FreePoint = { x: 105, y: 105 }
 const ANCHORS = {
   center: (r: Rect) => ({ x: r.left + r.width / 2, y: r.top + r.height / 2 }),
   corner: (r: Rect) => ({ x: r.left + r.width, y: r.top + r.height }),
@@ -132,6 +136,7 @@ export function compile(storyboard: Storyboard, layout: Layout): Compiled {
   const rows: Row[] = []
   const briefs: Note[] = []
   const texts: Record<string, string[]> = {}
+  const left = new Set<Lane>()
   const timeline = gsap.timeline({ paused: true })
 
   function channel(key: string, initial: number) {
@@ -299,6 +304,24 @@ export function compile(storyboard: Storyboard, layout: Layout): Compiled {
     runDrag(lane, corner, at + travel, duration)
     tween(`${name}.clip`, 0, at + travel, duration, DRAG_EASE)
     return travel + duration
+  }
+
+  function runFill(lane: Lane, action: FillAction | CrestAction, at: number, beatName: string) {
+    const rect = rectOf(action.target, beatName)
+    const name = elementRow(action.target, action.verb, { [action.verb]: 0 })
+    const travel = runMoveToPage(lane, ANCHORS.origin(rect), at)
+    const corner = ANCHORS.corner(rect)
+    const duration = dragSeconds(lane, corner, at + travel, action.duration)
+    runDrag(lane, corner, at + travel, duration)
+    tween(`${name}.${action.verb}`, 1, at + travel, duration, DRAG_EASE)
+    return travel + duration
+  }
+
+  function runLeave(lane: Lane, action: LeaveAction, at: number, beatName: string) {
+    const travel = runMove(lane, OFF_SCREEN, at, beatName, action.duration)
+    tween(`${lane}.presence`, 0, at + travel, PRESENCE_SECONDS, 'none')
+    left.add(lane)
+    return travel + PRESENCE_SECONDS
   }
 
   function textOf(target: string, beatName: string) {
@@ -478,7 +501,7 @@ export function compile(storyboard: Storyboard, layout: Layout): Compiled {
       placeCursor(lane, 1, typeof action.at === 'string' ? anchorPoint(action.at, beatName) : freePoint(action.at))
       return
     }
-    placeCursor(lane, 0, pagePoint(freePoint(ENTRY), poseAt(at)))
+    placeCursor(lane, 0, pagePoint(freePoint(OFF_SCREEN), poseAt(at)))
     tween(`${lane}.presence`, 1, at, PRESENCE_SECONDS, 'none')
   }
 
@@ -500,6 +523,11 @@ export function compile(storyboard: Storyboard, layout: Layout): Compiled {
         return runDup(lane, action, at, beatName)
       case 'setType':
         return runSetType(lane, action, at, beatName)
+      case 'fill':
+      case 'crest':
+        return runFill(lane, action, at, beatName)
+      case 'leave':
+        return runLeave(lane, action, at, beatName)
       case 'brief':
       case 'approve':
       case 'reject':
@@ -540,6 +568,8 @@ export function compile(storyboard: Storyboard, layout: Layout): Compiled {
       for (const action of actions) {
         if (!LANE_VERBS[lane].includes(action.verb))
           throw new Error(`The ${lane} can't "${action.verb}" in Beat "${beatName}"`)
+        if (left.has(lane))
+          throw new Error(`The ${lane} has already left, and can't "${action.verb}" in Beat "${beatName}"`)
         if (!(`${lane}.presence` in state))
           enter(lane, action, at, beatName)
         at += runAction(lane, action, at, beatName)

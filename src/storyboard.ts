@@ -1,10 +1,10 @@
-import { approve, beat, box, brief, dup, fit, move, nudge, pan, reject, replace, reveal, setType, type } from './engine/storyboard'
+import { approve, beat, box, brief, crest, dup, fill, fit, leave, move, nudge, pan, reject, replace, reveal, setType, type } from './engine/storyboard'
 import type { Storyboard } from './engine/storyboard'
 
 const PLACEHOLDER_BODY = 'Placeholder text about the person this page is for.'
 const PLACEHOLDER_TITLE = 'Project'
 
-// The grey movement. Brief wording is provisional, and #21 tunes the timing.
+// Brief wording is provisional, and #21 tunes the timing.
 const hero: Storyboard = [
   beat('Hero: the Delegator sits alone by name and role', {
     delegator: [brief('Make it a poster.', { x: 30, y: 46 }, { inPlace: true, duration: 2.5 })],
@@ -99,23 +99,57 @@ const contact: Storyboard = [
   }),
 ]
 
-// Rough, to prove the Camera. #17 authors the real colour movement.
-const roughEnding: Storyboard = [
-  beat('Turn: the Camera pulls back to the whole page', {
-    camera: [fit()],
-    designer: [move('work-heading')],
+const turn: Storyboard = [
+  beat('Turn: the Camera pulls back to the whole grey page', {
+    camera: [fit({ duration: 2.4 })],
   }),
   beat('Turn: the Delegator rejects all of it', {
     delegator: [reject('Too safe.', 'work', { duration: 2 })],
   }),
-  // Every cursor stays on the page below the fold, so the return carries them off screen.
-  beat('Landing: the Camera returns to the hero', {
-    camera: [pan('hero')],
+]
+
+const colour: Storyboard = [
+  beat('Colour: "Too safe." sends the Designer to set the palette', {
+    designer: [fill('hero', { duration: 2.8 }), fill('about-panel', { duration: 2.4 }), fill('about-body', { duration: 1.6 })],
   }),
-  // A pan to where the Camera already is. No transform, for a moment, before the page unpins.
-  beat('Landing: the page settles', {
-    camera: [pan('hero', { duration: 0.6 })],
+  beat('Colour: the Delegator approves the palette', {
+    delegator: [approve('Yes. All of it.', 'about-panel.corner', { duration: 1.4 })],
+  }),
+  beat('Colour: the approval releases the Agents, who fill the rest', {
+    agent1: [fill('work-heading', { duration: 1 }), fill('card2', { duration: 2.4 }), fill('contact', { duration: 2.4 })],
+    agent2: [fill('card1', { duration: 2.8 }), fill('card3', { duration: 2.8 })],
   }),
 ]
 
-export const storyboard: Storyboard = [...hero, ...about, ...projects, ...contact, ...roughEnding]
+const crestPart: Storyboard = [
+  beat('Crest: a Brief asks for one thing to click', {
+    delegator: [brief('One thing to click.', 'contact-button', { duration: 1 })],
+  }),
+  beat('Crest: the Designer fills the closing band, then the hero button', {
+    designer: [crest('contact-button', { duration: 1 }), crest('hero-button', { duration: 0.6 })],
+  }),
+  beat('Crest: the Delegator signs off', {
+    delegator: [approve('Ship it.', 'hero-button', { duration: 1 })],
+  }),
+]
+
+// The cursors have to land as the Camera does, or a free point misses, and they'd go off
+// with the page they were on. The Delegator can't move, but "Ship it." left them on the hero.
+const RETURN_SECONDS = 1.6
+
+const landing: Storyboard = [
+  beat('Landing: the Camera returns to the hero, and the Team comes with it', {
+    camera: [pan('hero', { duration: RETURN_SECONDS })],
+    backend: [move({ x: 72, y: 30 }, { duration: RETURN_SECONDS })],
+    agent1: [move({ x: 60, y: 62 }, { duration: RETURN_SECONDS })],
+    agent2: [move({ x: 80, y: 66 }, { duration: RETURN_SECONDS })],
+    designer: [move({ x: 48, y: 36 }, { duration: RETURN_SECONDS })],
+  }),
+  beat('Landing: Backend leaves first', { backend: [leave({ duration: 0.5 })] }),
+  beat('Landing: Agent 1 leaves', { agent1: [leave({ duration: 0.5 })] }),
+  beat('Landing: Agent 2 leaves', { agent2: [leave({ duration: 0.5 })] }),
+  beat('Landing: the Designer leaves', { designer: [leave({ duration: 0.5 })] }),
+  beat('Landing: the Delegator leaves last', { delegator: [leave({ duration: 0.7 })] }),
+]
+
+export const storyboard: Storyboard = [...hero, ...about, ...projects, ...contact, ...turn, ...colour, ...crestPart, ...landing]

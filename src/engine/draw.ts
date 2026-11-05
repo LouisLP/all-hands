@@ -2,8 +2,8 @@ import type { Compiled, Row } from './compile'
 import { SYSTEM_FONT, SYSTEM_WEIGHT } from './measure'
 import type { Overlay } from './overlay'
 
-/** The grey stage. #17 interpolates these to the final palette. */
-const NEUTRAL_TOKENS = {
+/** The grey stage, which stays on the root. Fills override it on the elements they colour. */
+export const NEUTRAL_TOKENS = {
   '--mandarin': '#b4b4b2',
   '--forest': '#4a4a48',
   '--cream': '#f0f0ee',
@@ -13,10 +13,39 @@ const NEUTRAL_TOKENS = {
   '--canvas': '#b4b4b2',
 }
 
+/** Where fills end up: the values in tokens.css, so nothing changes when overrides clear. */
+export const FINAL_TOKENS = {
+  '--mandarin': '#fd550a',
+  '--forest': '#015d47',
+  '--cream': '#f3e8d2',
+  '--crest': '#e0f354',
+  '--ink': '#012a20',
+}
+
+type Token = keyof typeof FINAL_TOKENS
+
+const PAGE_TOKENS: readonly Token[] = ['--mandarin', '--forest', '--cream', '--ink']
+
+const hexChannels = (hex: string) => [1, 3, 5].map(i => Number.parseInt(hex.slice(i, i + 2), 16))
+
+/** A token's colour at `mix` between neutral (0) and final (1). */
+export function mixToken(token: Token, mix: number) {
+  const neutral = hexChannels(NEUTRAL_TOKENS[token])
+  const channels = hexChannels(FINAL_TOKENS[token]).map((final, i) => Math.round(neutral[i]! + (final - neutral[i]!) * mix))
+  return `rgb(${channels.join(', ')})`
+}
+
 const WRITERS: Record<Exclude<Row['prop'], 'text'>, (el: HTMLElement | SVGElement, values: readonly number[]) => void> = {
   tokens(el) {
     for (const [token, value] of Object.entries(NEUTRAL_TOKENS))
       el.style.setProperty(token, value)
+  },
+  fill(el, [mix = 0]) {
+    for (const token of PAGE_TOKENS)
+      el.style.setProperty(token, mixToken(token, mix))
+  },
+  crest(el, [mix = 0]) {
+    el.style.setProperty('--crest', mixToken('--crest', mix))
   },
   camera(el, [x = 0, y = 0, scale = 1]) {
     // `none` at rest, because even an identity transform would make a stacking context.

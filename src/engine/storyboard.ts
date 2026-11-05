@@ -91,6 +91,26 @@ export interface SetTypeAction extends ActionOptions {
   opening: Partial<Record<BuildName, number>>
 }
 
+/**
+ * Drags across the element while its page tokens go from neutral to final. The tokens are
+ * scoped to it, so everything it holds changes with it, and nothing else does. Leaves Crest.
+ */
+export interface FillAction extends ActionOptions {
+  verb: 'fill'
+  target: BuildName
+}
+
+/** A fill of the Crest token alone, which only the Designer gets to use. */
+export interface CrestAction extends ActionOptions {
+  verb: 'crest'
+  target: BuildName
+}
+
+/** The cursor goes off screen and is gone for the rest of the Build. */
+export interface LeaveAction extends ActionOptions {
+  verb: 'leave'
+}
+
 interface NoteOptions extends ActionOptions {
   /** Up from the very first frame, with the cursor already there. Only for t = 0. */
   inPlace?: boolean
@@ -132,17 +152,18 @@ export type NoteAction = BriefAction | ApproveAction | RejectAction
 
 export type Action =
   | MoveAction | RevealAction | BoxAction | TypeAction | ReplaceAction | NudgeAction | DupAction | SetTypeAction
+  | FillAction | CrestAction | LeaveAction
   | NoteAction
   | PanAction | FitAction
 export type Verb = Action['verb']
 
-type AgentAction = MoveAction | RevealAction | TypeAction | DupAction
+type AgentAction = MoveAction | RevealAction | TypeAction | DupAction | FillAction | LeaveAction
 
-/** Each lane runs in sequence. The Delegator only briefs, approves and rejects, and makes no edits. */
+/** Each lane runs in sequence. The Delegator only briefs, approves, rejects and leaves, and makes no edits. */
 export interface Lanes {
-  delegator?: readonly NoteAction[]
-  designer?: readonly (MoveAction | RevealAction | BoxAction | TypeAction | NudgeAction | SetTypeAction)[]
-  backend?: readonly (MoveAction | RevealAction | ReplaceAction)[]
+  delegator?: readonly (NoteAction | LeaveAction)[]
+  designer?: readonly (MoveAction | RevealAction | BoxAction | TypeAction | NudgeAction | SetTypeAction | FillAction | CrestAction | LeaveAction)[]
+  backend?: readonly (MoveAction | RevealAction | ReplaceAction | LeaveAction)[]
   agent1?: readonly AgentAction[]
   agent2?: readonly AgentAction[]
   camera?: readonly (PanAction | FitAction)[]
@@ -192,6 +213,18 @@ export function dup(target: BuildName, from: BuildName, options: ActionOptions =
 
 export function setType(target: BuildName, opening: SetTypeAction['opening'], options: ActionOptions = {}): SetTypeAction {
   return { verb: 'setType', target, opening, ...options }
+}
+
+export function fill(target: BuildName, options: ActionOptions = {}): FillAction {
+  return { verb: 'fill', target, ...options }
+}
+
+export function crest(target: BuildName, options: ActionOptions = {}): CrestAction {
+  return { verb: 'crest', target, ...options }
+}
+
+export function leave(options: ActionOptions = {}): LeaveAction {
+  return { verb: 'leave', ...options }
 }
 
 export function brief(text: string, at: Target | FreePoint, options: NoteOptions = {}): BriefAction {

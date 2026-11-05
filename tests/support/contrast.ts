@@ -32,3 +32,50 @@ export const palette = {
   crest: '#e0f354',
   ink: '#012a20',
 } as const
+
+export interface TextSample {
+  text: string
+  fg: Rgb
+  bg: Rgb
+  px: number
+  weight: number
+}
+
+/** Runs in the page: every piece of text that's drawn, and the colour it sits on. */
+export function auditText(): TextSample[] {
+  const parse = (c: string) => {
+    const m = c.match(/[\d.]+/g)!.map(Number)
+    return { rgb: [m[0]!, m[1]!, m[2]!] as const, a: m[3] ?? 1 }
+  }
+  // Fully clipped is the `box` verb at its start, with nothing dragged out yet.
+  const isHidden = (el: Element) => {
+    for (let at: Element | null = el; at; at = at.parentElement) {
+      const { opacity, clipPath } = getComputedStyle(at)
+      if (opacity === '0' || clipPath.includes('100%'))
+        return true
+    }
+    return !el.checkVisibility()
+  }
+  const samples: TextSample[] = []
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT)
+  while (walker.nextNode()) {
+    const el = walker.currentNode.parentElement!
+    if (!walker.currentNode.textContent?.trim() || el.closest('.visually-hidden') || isHidden(el))
+      continue
+    const css = getComputedStyle(el)
+    let ground: Element = el
+    let bg = parse(getComputedStyle(ground).backgroundColor)
+    while (bg.a === 0 && ground.parentElement) {
+      ground = ground.parentElement
+      bg = parse(getComputedStyle(ground).backgroundColor)
+    }
+    samples.push({
+      text: walker.currentNode.textContent.trim().slice(0, 30),
+      fg: parse(css.color).rgb,
+      bg: bg.rgb,
+      px: Number.parseFloat(css.fontSize),
+      weight: Number(css.fontWeight),
+    })
+  }
+  return samples
+}

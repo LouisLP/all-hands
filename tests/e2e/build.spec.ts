@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
 
+import { auditText, contrastRatio, requiredRatio } from '../support/contrast'
+
 // `seek` is internal, so these reach it the way the Spectator does, through the scroll driver.
 // Scroll maps 1:1 to t, so a scroll position stands for a t.
 
@@ -386,6 +388,7 @@ test('a cursor and a Brief stay at screen size while zoomed out, and on their ta
   const delegator = page.locator('.cursor[data-teammate="delegator"]')
   const pointer = delegator.locator('svg')
   const brief = delegator.locator('.brief')
+  const tooSafe = brief.filter({ hasText: 'Too safe.' })
 
   // Before the Camera moves, wherever the first Brief is up.
   let atFullSize: { pointer: number, label: number, brief: number } | undefined
@@ -407,13 +410,13 @@ test('a cursor and a Brief stay at screen size while zoomed out, and on their ta
   let shown = false
   for (let y = start; y < trackLength && !shown; y += 40) {
     await scrollTo(page, y)
-    shown = await brief.last().isVisible()
+    shown = await tooSafe.isVisible()
   }
   expect(shown).toBe(true)
 
   expect((await pointer.boundingBox())!.height).toBeCloseTo(atFullSize!.pointer, 1)
   expect((await delegator.locator('.cursor-label').boundingBox())!.height).toBeCloseTo(atFullSize!.label, 1)
-  expect((await brief.last().boundingBox())!.height).toBeCloseTo(atFullSize!.brief, 1)
+  expect((await tooSafe.boundingBox())!.height).toBeCloseTo(atFullSize!.brief, 1)
 
   const { cursor, target } = await page.evaluate(() => {
     const cursor = document.querySelector('.cursor[data-teammate="delegator"]')!.getBoundingClientRect()
@@ -436,4 +439,133 @@ test('the Camera ends with no transform before the page unpins, and clears at th
   await scrollTo(page, trackLength)
   await expect(camera).toHaveCSS('transform', 'none')
   expect(await camera.getAttribute('style')).toBeNull()
+})
+
+const background = (page: Page, name: string) =>
+  page.locator(`[data-build="${name}"]`).evaluate(el => getComputedStyle(el).backgroundColor)
+
+const NEUTRAL_MANDARIN = 'rgb(180, 180, 178)'
+const NEUTRAL_CREST = 'rgb(255, 255, 255)'
+
+test('"Too safe." triggers colour, and Crest arrives after its Brief and before "Ship it."', async ({ page }) => {
+  const trackLength = await ready(page)
+  const first = new Map<string, number>()
+  const see = (what: string, y: number) => {
+    if (!first.has(what))
+      first.set(what, y)
+  }
+  const briefUp = (text: string) => page.locator('.brief').filter({ hasText: text }).isVisible()
+
+  for (const y of stops(trackLength, 300)) {
+    await scrollTo(page, y)
+    if (await briefUp('Too safe.'))
+      see('too safe', y)
+    if (await background(page, 'hero') !== NEUTRAL_MANDARIN)
+      see('colour', y)
+    if (await briefUp('One thing to click.'))
+      see('brief', y)
+    if (await background(page, 'contact-button') !== NEUTRAL_CREST)
+      see('closing band', y)
+    if (await background(page, 'hero-button') !== NEUTRAL_CREST)
+      see('hero button', y)
+    if (await briefUp('Ship it.'))
+      see('ship it', y)
+  }
+
+  const order = ['too safe', 'colour', 'brief', 'closing band', 'hero button', 'ship it'].map(what => first.get(what)!)
+  expect(order.every(y => y !== undefined)).toBe(true)
+  expect(order).toEqual([...order].sort((a, b) => a - b))
+  expect(new Set(order).size).toBe(order.length)
+})
+
+test('colour tokens pass through values between neutral and final', async ({ page }) => {
+  const trackLength = await ready(page)
+  const seen = new Set<string>()
+  for (const y of stops(trackLength, 300, 1))
+    seen.add((await (scrollTo(page, y).then(() => background(page, 'hero')))))
+  expect(seen).toContain(NEUTRAL_MANDARIN)
+  expect(seen).toContain('rgb(253, 85, 10)')
+  expect(seen.size).toBeGreaterThan(3)
+})
+
+test('the page\'s colours don\'t change when overrides clear', async ({ page }) => {
+  const trackLength = await ready(page)
+  // These two only hold filled sections, so what they inherit from the neutral root never shows.
+  const colours = () => page.locator('[data-build]:not([data-build="about"], [data-build="work"])').evaluateAll(els => els.map((el) => {
+    const { backgroundColor, color, borderTopColor, fill } = getComputedStyle(el)
+    return [el.getAttribute('data-build'), backgroundColor, color, borderTopColor, fill].join(' ')
+  }))
+  await scrollTo(page, trackLength - 1)
+  const pinned = await colours()
+  await scrollTo(page, trackLength)
+  expect(await colours()).toEqual(pinned)
+})
+
+test('the cursors come back with the Camera, then leave one by one, Backend first and Delegator last', async ({ page }) => {
+  const trackLength = await ready(page)
+  const viewport = page.viewportSize()!
+  const team = ['backend', 'agent1', 'agent2', 'designer', 'delegator']
+  const lastSeen = new Map<string, number>()
+  const start = Math.round(trackLength * 0.9)
+  let home = false
+
+  for (let y = start; y < trackLength; y += 8) {
+    await scrollTo(page, y)
+    const { visible, transform } = await page.evaluate(team => ({
+      transform: document.querySelector<HTMLElement>('.camera')!.style.transform,
+      visible: team.flatMap((name) => {
+        const el = document.querySelector(`.cursor[data-teammate="${name}"]`)!
+        return el.checkVisibility() ? [{ name, ...el.getBoundingClientRect().toJSON() }] : []
+      }),
+    }), team)
+    for (const { name } of visible)
+      lastSeen.set(name, y)
+    // Nobody is carried off by the Camera: the moment it's home, all five are on screen.
+    if (transform === 'none' && !home) {
+      home = true
+      expect(visible.map(({ name }) => name)).toEqual(team)
+      for (const { left, top } of visible) {
+        expect(left).toBeLessThan(viewport.width)
+        expect(top).toBeLessThan(viewport.height)
+      }
+    }
+  }
+
+  expect(home).toBe(true)
+  const leaving = team.map(name => lastSeen.get(name)!)
+  expect(leaving).toEqual([...leaving].sort((a, b) => a - b))
+  expect(new Set(leaving).size).toBe(team.length)
+  await scrollTo(page, trackLength - 1)
+  // The Delegator is still fading out here, but off screen.
+  await expect(page.locator('.cursor:visible:not([data-teammate="delegator"])')).toHaveCount(0)
+  await expect(page.locator('.cursor[data-teammate="delegator"]')).not.toBeInViewport()
+  await expect(page.locator('.brief:visible')).toHaveCount(0)
+  await expect(page.locator('.selection')).toBeHidden()
+})
+
+// Required test 8, on everything drawn, which takes in the overlay's labels and Briefs when they're up.
+test('page text passes contrast at each stage of the Build', async ({ page }) => {
+  const trackLength = await ready(page)
+  let checked = 0
+  for (const y of stops(trackLength, 120)) {
+    await scrollTo(page, y)
+    const samples = await page.evaluate(auditText)
+    checked += samples.length
+    for (const s of samples)
+      expect(contrastRatio(s.fg, s.bg), `"${s.text}" at ${s.px}px, scroll ${y}`).toBeGreaterThanOrEqual(requiredRatio(s.px, s.weight))
+  }
+  expect(checked).toBeGreaterThan(120)
+})
+
+// Required test 8, for every label and Brief whether or not it's up at this moment.
+test('cursor and Brief labels pass contrast', async ({ page }) => {
+  await ready(page)
+  const samples = await page.locator('.cursor-label, .brief').evaluateAll(els => els.map((el) => {
+    const { color, backgroundColor, fontSize, fontWeight } = getComputedStyle(el)
+    const rgb = (c: string) => c.match(/[\d.]+/g)!.slice(0, 3).map(Number) as [number, number, number]
+    return { text: el.textContent, fg: rgb(color), bg: rgb(backgroundColor), px: Number.parseFloat(fontSize), weight: Number(fontWeight) }
+  }))
+  expect(samples.length).toBeGreaterThan(5)
+  for (const s of samples)
+    expect(contrastRatio(s.fg, s.bg), s.text ?? '').toBeGreaterThanOrEqual(requiredRatio(s.px, s.weight))
 })
