@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { compile } from '../../src/engine/compile'
 import type { Layout } from '../../src/engine/compile'
 import { approve, beat, box, brief, BUILD_NAMES, crest, dup, fill, fit, leave, move, nudge, pan, reject, replace, reveal, setType, type } from '../../src/engine/storyboard'
-import type { Storyboard } from '../../src/engine/storyboard'
+import type { Action, Storyboard } from '../../src/engine/storyboard'
 import { storyboard as realStoryboard } from '../../src/storyboard'
 
 const VIEWPORT = { width: 1000, height: 500 }
@@ -600,6 +600,131 @@ describe('leaving', () => {
   it('refuses anything after it', () => {
     const storyboard = [entered, beat('gone', { delegator: [leave(), brief('Wait.', 'name')] })]
     expect(() => compile(storyboard, layoutWith())).toThrow(/already left/i)
+  })
+})
+
+describe('reduced motion', () => {
+  const reduced = { reducedMotion: true }
+
+  // How long `key` spends strictly between its values at `start` and `end`.
+  function secondsBetween(compiled: Compiled, key: string, start: number, end: number) {
+    const STEP = 0.01
+    let seconds = 0
+    for (let t = 0; t <= compiled.duration; t += STEP) {
+      const value = snapshotAt(compiled, t)[key]!
+      if (value > Math.min(start, end) + 1e-6 && value < Math.max(start, end) - 1e-6)
+        seconds += STEP
+    }
+    return seconds
+  }
+
+  it('cuts a pan and a fit, with the same end pose', () => {
+    const storyboard = [beat('back', { camera: [fit({ duration: 2 })] }), beat('return', { camera: [pan('about', { duration: 2 })] })]
+    const layout = layoutWith({ about: { left: 0, top: 1200, width: 1000, height: 400 } })
+    const smooth = compile(storyboard, layout)
+    const cut = compile(storyboard, layout, reduced)
+    expect(smooth.duration).toBe(4)
+    expect(cut.duration).toBeLessThan(0.01)
+    expect(snapshotAt(cut, cut.duration)).toEqual(snapshotAt(smooth, smooth.duration))
+  })
+
+  it('leaves an untagged action as it is', () => {
+    const storyboard = [beat('small', { designer: [box('about', { duration: 1 }), reveal('name', { duration: 1 })] })]
+    expect(compile(storyboard, layoutWith(), reduced).duration).toBe(compile(storyboard, layoutWith()).duration)
+  })
+
+  it('cuts a tagged box, dup, move and setType to their end states', () => {
+    const storyboard = [beat('large', {
+      designer: [setType('title', { name: 30, role: 20 }, { duration: 3, large: true }), box('about', { duration: 3, large: true }), move({ x: 10, y: 10 }, { duration: 3, large: true })],
+      agent1: [dup('card2', 'card1', { duration: 3, large: true })],
+    })]
+    const layout = layoutWith({ card2: { left: 0, top: 900, width: 100, height: 100 } })
+    const smooth = compile(storyboard, layout)
+    const cut = compile(storyboard, layout, reduced)
+    expect(cut.duration).toBeLessThan(smooth.duration - 8)
+    expect(snapshotAt(cut, cut.duration)).toEqual(snapshotAt(smooth, smooth.duration))
+    expect(secondsBetween(cut, 'about.clip', 1, 0)).toBeLessThan(0.02)
+    expect(secondsBetween(cut, 'card2.y', 900, 0)).toBeLessThan(0.02)
+  })
+
+  it('tags every pan and zoom in the real Storyboard, and the big set pieces', () => {
+    const actions = realStoryboard.flatMap(({ lanes }) => Object.values(lanes).flat()) as (Action & { large?: boolean })[]
+    const always = actions.filter(({ verb }) => ['pan', 'fit', 'setType', 'dup'].includes(verb))
+    expect(always.length).toBeGreaterThan(5)
+    expect(always.filter(({ large }) => !large)).toEqual([])
+  })
+
+  it('keeps the real Camera out of everything between its poses', () => {
+    const cut = compile(realStoryboard, layoutWith(), reduced)
+    const smooth = compile(realStoryboard, layoutWith())
+    const { 'camera.scale': zoomed } = snapshotAt(cut, cut.reveals['contact']! + 0.5)
+    expect(zoomed).toBeLessThan(1)
+    expect(secondsBetween(cut, 'camera.scale', 1, zoomed!)).toBeLessThan(0.05)
+    expect(secondsBetween(smooth, 'camera.scale', 1, zoomed!)).toBeGreaterThan(1)
+  })
+
+  // Comparing whole prefixes gives every Beat's end, with nothing added to the compiled output.
+  it('reaches the same state as the full motion at the end of every real Beat', () => {
+    const layout = layoutWith({
+      about: { left: 0, top: 900, width: 1000, height: 500 },
+      work: { left: 0, top: 1400, width: 1000, height: 1200 },
+      contact: { left: 0, top: 2600, width: 1000, height: 1400 },
+    })
+    for (let beats = 1; beats <= realStoryboard.length; beats++) {
+      const prefix = realStoryboard.slice(0, beats)
+      const smooth = compile(prefix, layout)
+      const cut = compile(prefix, layout, reduced)
+      const expected = snapshotAt(smooth, smooth.duration)
+      const actual = snapshotAt(cut, cut.duration)
+      expect(Object.keys(actual).sort()).toEqual(Object.keys(expected).sort())
+      for (const [key, value] of Object.entries(expected))
+        expect(actual[key], `${key} after "${prefix.at(-1)!.name}"`).toBeCloseTo(value!, 3)
+    }
+  })
+})
+
+describe('reveal times', () => {
+  it('records the end of the last Beat that touches an element', () => {
+    const { reveals } = compile([
+      beat('first', { designer: [reveal('name', { duration: 1 })], backend: [reveal('role', { duration: 3 })] }),
+      beat('second', { designer: [reveal('hero-intro', { duration: 2 })] }),
+      beat('third', { designer: [fill('hero', { duration: 1 }), fill('name', { duration: 1 })] }),
+    ], layoutWith())
+    const end = reveals.name!
+    expect(reveals.role).toBe(3)
+    expect(reveals['hero-intro']).toBe(5)
+    expect(reveals.hero).toBe(end)
+    expect(end).toBeGreaterThan(5)
+  })
+
+  it('counts each line of the type gesture, but not a dup\'s source, a move or a Brief', () => {
+    const { reveals } = compile([
+      beat('gesture', { designer: [setType('title', { name: 30 }, { duration: 1 })] }),
+      beat('rest', {
+        agent1: [dup('card2', 'card1', { duration: 1 }), move('role', { duration: 1 })],
+        delegator: [brief('Hm.', 'hero-button', { duration: 1 })],
+      }),
+    ], layoutWith())
+    expect(reveals.name).toBe(reveals.title)
+    expect(reveals.card2).toBeGreaterThan(reveals.title!)
+    for (const name of ['card1', 'role', 'hero-button'])
+      expect(reveals[name], name).toBeUndefined()
+  })
+
+  it('ignores the Camera', () => {
+    const { reveals } = compile([beat('pan', { camera: [pan('about')] })], layoutWith())
+    expect(reveals).toEqual({})
+  })
+
+  it('covers everything focusable in the real Storyboard, at both motion settings', () => {
+    const links = ['hero-button', 'card1-link', 'card2-link', 'card3-link', 'contact-button', 'contact-links', 'colophon']
+    for (const options of [{}, { reducedMotion: true }]) {
+      const { reveals, duration } = compile(realStoryboard, layoutWith(), options)
+      for (const name of links) {
+        expect(reveals[name], name).toBeGreaterThan(0)
+        expect(reveals[name], name).toBeLessThan(duration)
+      }
+    }
   })
 })
 

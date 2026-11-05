@@ -71,7 +71,14 @@ export interface Compiled {
   briefs: readonly Note[]
   /** Every text an element shows at some point, which its `source` state picks from. */
   texts: Readonly<Partial<Record<string, readonly string[]>>>
+  /** For each element a Teammate works on, the end of the last Beat that touches it. */
+  reveals: Readonly<Partial<Record<string, number>>>
   duration: number
+}
+
+export interface CompileOptions {
+  /** Swaps every action tagged `large` for a cut with the same end state. */
+  reducedMotion?: boolean
 }
 
 interface Point {
@@ -126,10 +133,16 @@ function isLane(lane: string): lane is Lane {
   return lane in LANE_VERBS
 }
 
-export function compile(storyboard: Storyboard, layout: Layout): Compiled {
+export function compile(storyboard: Storyboard, layout: Layout, { reducedMotion = false }: CompileOptions = {}): Compiled {
   if (storyboard.length === 0)
     throw new Error('The Storyboard has no Beats')
 
+  // Every large verb takes its motion's time from `duration`, so this is all a cut needs.
+  function paced<A extends Action>(action: A): A {
+    return reducedMotion && 'large' in action && action.large ? { ...action, duration: SWITCH_SECONDS } : action
+  }
+
+  const reveals: Record<string, number> = {}
   const state: Record<string, number> = {}
   const latest: Record<string, number> = {}
   const latestEnd: Record<string, number> = {}
@@ -408,7 +421,8 @@ export function compile(storyboard: Storyboard, layout: Layout): Compiled {
     runDrag(lane, home, at + travel, duration)
     tween(`${name}.x`, 0, at + travel, duration, DRAG_EASE)
     tween(`${name}.y`, 0, at + travel, duration, DRAG_EASE)
-    return travel + duration
+    // A cut still fades the copy in, which makes this the short fade the spec allows.
+    return travel + Math.max(duration, PRESENCE_SECONDS)
   }
 
   function runSetType(lane: Lane, action: SetTypeAction, at: number, beatName: string) {
@@ -557,10 +571,11 @@ export function compile(storyboard: Storyboard, layout: Layout): Compiled {
     for (const action of camera as readonly Action[]) {
       if (!CAMERA_VERBS.includes(action.verb))
         throw new Error(`The camera can't "${action.verb}" in Beat "${beatName}"`)
-      cameraAt += runCamera(action as PanAction | FitAction, cameraAt, beatName)
+      cameraAt += runCamera(paced(action as PanAction | FitAction), cameraAt, beatName)
     }
     beatEnd = Math.max(beatEnd, cameraAt)
 
+    const touched = new Set<string>()
     for (const [lane, actions] of Object.entries(teammates) as [string, readonly Action[]][]) {
       if (!isLane(lane))
         throw new Error(`Unknown lane "${lane}" in Beat "${beatName}"`)
@@ -572,10 +587,16 @@ export function compile(storyboard: Storyboard, layout: Layout): Compiled {
           throw new Error(`The ${lane} has already left, and can't "${action.verb}" in Beat "${beatName}"`)
         if (!(`${lane}.presence` in state))
           enter(lane, action, at, beatName)
-        at += runAction(lane, action, at, beatName)
+        at += runAction(lane, paced(action), at, beatName)
+        if ('target' in action)
+          touched.add(action.target)
+        if (action.verb === 'setType')
+          Object.keys(action.opening).forEach(name => touched.add(name))
       }
       beatEnd = Math.max(beatEnd, at)
     }
+    for (const name of touched)
+      reveals[name] = beatEnd
     lastBeatStart = beatStart
     beatStart = beatEnd
   }
@@ -586,5 +607,5 @@ export function compile(storyboard: Storyboard, layout: Layout): Compiled {
   if (beatStart > lastBeatStart)
     tween('line.presence', 0, lastBeatStart, beatStart - lastBeatStart, 'none')
 
-  return { timeline, state, rows, briefs, texts, duration: timeline.duration() }
+  return { timeline, state, rows, briefs, texts, reveals, duration: timeline.duration() }
 }
