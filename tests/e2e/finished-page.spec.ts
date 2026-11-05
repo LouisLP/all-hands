@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-import { contrastRatio, requiredRatio } from '../support/contrast'
+import { auditText, contrastRatio, requiredRatio } from '../support/contrast'
 
 const BUILD_NAMES = [
   'hero', 'hero-meta', 'hero-marks-top', 'title', 'name', 'role', 'hero-marks-bottom', 'hero-intro', 'hero-button', 'hero-shapes',
@@ -131,37 +131,10 @@ for (const [width, height] of [[320, 568], [360, 740], [568, 320], [768, 1024], 
     test('page text passes contrast, and Crest stays on Get in touch', async ({ page }) => {
       await page.goto('')
       await page.evaluate(() => document.fonts.ready)
-      const { samples, crest } = await page.evaluate(() => {
-        const parse = (c: string) => {
-          const m = c.match(/[\d.]+/g)!.map(Number)
-          return { rgb: [m[0]!, m[1]!, m[2]!] as const, a: m[3] ?? 1 }
-        }
-        const samples = []
-        const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT)
-        while (walker.nextNode()) {
-          const el = walker.currentNode.parentElement!
-          if (!walker.currentNode.textContent?.trim() || el.closest('.visually-hidden'))
-            continue
-          const css = getComputedStyle(el)
-          let ground: Element = el
-          let bg = parse(getComputedStyle(ground).backgroundColor)
-          while (bg.a === 0 && ground.parentElement) {
-            ground = ground.parentElement
-            bg = parse(getComputedStyle(ground).backgroundColor)
-          }
-          samples.push({
-            text: walker.currentNode.textContent.trim().slice(0, 30),
-            fg: parse(css.color).rgb,
-            bg: bg.rgb,
-            px: Number.parseFloat(css.fontSize),
-            weight: Number(css.fontWeight),
-          })
-        }
-        const crest = [...document.body.querySelectorAll('*')]
-          .filter(el => getComputedStyle(el).backgroundColor === 'rgb(224, 243, 84)')
-          .map(el => el.getAttribute('data-build'))
-        return { samples, crest }
-      })
+      const samples = await page.evaluate(auditText)
+      const crest = await page.locator('body *').evaluateAll(els => els
+        .filter(el => getComputedStyle(el).backgroundColor === 'rgb(224, 243, 84)')
+        .map(el => el.getAttribute('data-build')))
       expect(samples.length).toBeGreaterThan(10)
       for (const s of samples)
         expect(contrastRatio(s.fg, s.bg), `${s.text} at ${s.px}px`).toBeGreaterThanOrEqual(requiredRatio(s.px, s.weight))

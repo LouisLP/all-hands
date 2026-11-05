@@ -137,7 +137,7 @@ The sticky page stays pinned for the length of the Track, then scrolls natively.
 - Typed TypeScript data: an ordered list of Beats.
 - Each Beat has one sequential lane per Teammate plus a Camera lane, and ends when its longest lane ends. Beats run one after another, which makes them the sync points.
 - Durations come from the verb, with optional overrides.
-- Types limit the Delegator to brief, approve and reject, and the Camera to `pan` and `fit`.
+- Types limit the Delegator to brief, approve, reject and leave, and the Camera to `pan` and `fit`. Leaving isn't an edit, and part 8 needs it.
 - Targets are named elements and anchor points, such as `name.corner`, resolved by measuring the finished layout with no Camera after `document.fonts.ready`. Free moves use percentages.
 - Actions accept a `cue` field for later sound, with no implementation now.
 
@@ -154,7 +154,7 @@ beat('Agent fills cards while Designer tidies', {
 - GSAP tweens only numeric state: character counts, 0–1 colour mixes, and thresholds for discrete changes such as font family. Typing has to be drawn from numeric state, because a string tween failed to revert on seek back in #2's probe.
 - `draw()` is table-driven and skips unchanged values. Its overrides are limited to transform, opacity, font size, font family, colour tokens, visible text and clip.
 - Section heights are locked to their finished size. Big type uses real font size inside a box locked to its finished size, so siblings don't reflow.
-- The colour arc interpolates CSS colour tokens from neutral to final.
+- The colour arc interpolates CSS colour tokens from neutral to final. Neutral values stay on the root, and each fill overrides them on its own element, so colour arrives where a Teammate puts it.
 - A read-only ambient layer runs on wall-clock time over scrubbed state: caret blink and idle cursor drift, with no effect on the page and no visual progress. It's off under reduced motion and on the finished page. Cut the drift if it reads as noise.
 
 ### Camera

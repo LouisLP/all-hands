@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { compile } from '../../src/engine/compile'
 import type { Layout } from '../../src/engine/compile'
-import { approve, beat, box, brief, BUILD_NAMES, dup, fit, move, nudge, pan, reject, replace, reveal, setType, type } from '../../src/engine/storyboard'
+import { approve, beat, box, brief, BUILD_NAMES, crest, dup, fill, fit, leave, move, nudge, pan, reject, replace, reveal, setType, type } from '../../src/engine/storyboard'
 import type { Storyboard } from '../../src/engine/storyboard'
 import { storyboard as realStoryboard } from '../../src/storyboard'
 
@@ -557,6 +557,52 @@ describe('layout verbs', () => {
   })
 })
 
+describe('colour', () => {
+  const layout = layoutWith({ hero: { left: 100, top: 200, width: 300, height: 400 } })
+
+  it('drags across an element while its mix goes from neutral to final', () => {
+    const compiled = compile([beat('fill', { designer: [fill('hero', { duration: 1 })] })], layout)
+    expect(compiled.rows).toContainEqual({ node: { kind: 'element', name: 'hero' }, prop: 'fill', keys: ['hero.fill'] })
+    const travel = compiled.duration - 1
+    expect(snapshotAt(compiled, travel)).toMatchObject({ 'hero.fill': 0, 'designer.x': 100, 'designer.y': 200 })
+    expect(snapshotAt(compiled, compiled.duration)).toMatchObject({ 'hero.fill': 1, 'designer.x': 400, 'designer.y': 600 })
+  })
+
+  it('keeps Crest apart from the rest of a fill', () => {
+    const compiled = compile([beat('fill', { designer: [fill('hero', { duration: 1 }), crest('hero', { duration: 1 })] })], layout)
+    expect(compiled.rows).toContainEqual({ node: { kind: 'element', name: 'hero' }, prop: 'crest', keys: ['hero.crest'] })
+    expect(snapshotAt(compiled, compiled.duration - 1)).toMatchObject({ 'hero.fill': 1, 'hero.crest': 0 })
+    expect(snapshotAt(compiled, compiled.duration)).toMatchObject({ 'hero.crest': 1 })
+  })
+
+  it('refuses a fill from outside the job', () => {
+    // @ts-expect-error Crest is the Designer's call
+    const agentCrest = [beat('overreach', { agent1: [crest('hero')] })]
+    expect(() => compile(agentCrest, layout)).toThrow(/agent1 can't "crest"/i)
+    // @ts-expect-error Backend handles data, not colour
+    const backendFill = [beat('overreach', { backend: [fill('hero')] })]
+    expect(() => compile(backendFill, layout)).toThrow(/backend can't "fill"/i)
+    // @ts-expect-error the Delegator makes no edits
+    const delegatorFill = [beat('overreach', { delegator: [fill('hero')] })]
+    expect(() => compile(delegatorFill, layout)).toThrow(/delegator can't "fill"/i)
+  })
+})
+
+describe('leaving', () => {
+  const entered = beat('here', { delegator: [brief('Hello.', { x: 50, y: 50 }, { duration: 1 })] })
+
+  it('takes the cursor off screen, then removes it', () => {
+    const compiled = compile([entered, beat('gone', { delegator: [leave({ duration: 1 })] })], layoutWith())
+    expect(snapshotAt(compiled, compiled.duration - 0.1)).toMatchObject({ 'delegator.presence': 1, 'delegator.x': 1050, 'delegator.y': 525 })
+    expect(snapshotAt(compiled, compiled.duration)).toMatchObject({ 'delegator.presence': 0 })
+  })
+
+  it('refuses anything after it', () => {
+    const storyboard = [entered, beat('gone', { delegator: [leave(), brief('Wait.', 'name')] })]
+    expect(() => compile(storyboard, layoutWith())).toThrow(/already left/i)
+  })
+})
+
 describe('the real Storyboard', () => {
   it('compiles against every Build name', () => {
     expect(compile(realStoryboard, layoutWith()).duration).toBeGreaterThan(0)
@@ -596,6 +642,70 @@ describe('the real Storyboard', () => {
     const tighter = kinds.indexOf('reject Tighter.')
     expect(tighter).toBeGreaterThan(-1)
     expect(kinds[tighter + 1]).toMatch(/^approve /)
+  })
+
+  // When a state key first moves off its value at t = 0, or goes past `to`.
+  function firstChange(compiled: Compiled, key: string, to?: number) {
+    compiled.timeline.seek(0, false)
+    const start = compiled.state[key]
+    for (let t = 0; t <= compiled.duration; t += 0.02) {
+      compiled.timeline.seek(t, false)
+      if (to === undefined ? compiled.state[key] !== start : compiled.state[key] === to)
+        return t
+    }
+    return Number.POSITIVE_INFINITY
+  }
+
+  it('fills only after "Too safe." has gone up', () => {
+    const compiled = compile(realStoryboard, layoutWith())
+    const index = compiled.briefs.findIndex(({ text }) => text === 'Too safe.')
+    const rejected = firstChange(compiled, `brief${index}.presence`)
+    const fills = compiled.rows.filter(({ prop }) => prop === 'fill' || prop === 'crest').flatMap(({ keys }) => keys)
+    expect(fills.length).toBeGreaterThan(5)
+    for (const key of fills)
+      expect(firstChange(compiled, key), key).toBeGreaterThan(rejected)
+  })
+
+  it('puts Crest only on Get in touch, after its Brief and before "Ship it."', () => {
+    const compiled = compile(realStoryboard, layoutWith())
+    const crests = compiled.rows.filter(({ prop }) => prop === 'crest').flatMap(({ keys }) => keys)
+    expect(crests).toEqual(['contact-button.crest', 'hero-button.crest'])
+
+    const noteAt = (text: string) => firstChange(compiled, `brief${compiled.briefs.findIndex(b => b.text === text)}.presence`)
+    expect(firstChange(compiled, 'contact-button.crest')).toBeGreaterThan(noteAt('One thing to click.'))
+    expect(firstChange(compiled, 'hero-button.crest')).toBeGreaterThan(firstChange(compiled, 'contact-button.crest', 1) - 0.02)
+    expect(noteAt('Ship it.')).toBeGreaterThan(firstChange(compiled, 'hero-button.crest', 1) - 0.02)
+  })
+
+  it('finishes every fill it starts', () => {
+    const compiled = compile(realStoryboard, layoutWith())
+    const end = snapshotAt(compiled, compiled.duration)
+    const fills = compiled.rows.filter(({ prop }) => prop === 'fill' || prop === 'crest').flatMap(({ keys }) => keys)
+    for (const key of fills)
+      expect(end[key], key).toBe(1)
+  })
+
+  it('colours every surface of the page', () => {
+    const { rows } = compile(realStoryboard, layoutWith())
+    const filled = rows.filter(({ prop }) => prop === 'fill').map(({ node }) => (node.kind === 'element' ? node.name : ''))
+    expect(filled.sort()).toEqual(['about-body', 'about-panel', 'card1', 'card2', 'card3', 'contact', 'hero', 'work-heading'])
+  })
+
+  it('sends the Team off one by one, Backend first and the Delegator last', () => {
+    const compiled = compile(realStoryboard, layoutWith())
+    // Walking back from the end, because all but the Delegator also start at 0.
+    const gone = ['backend', 'agent1', 'agent2', 'designer', 'delegator'].map((lane) => {
+      for (let t = compiled.duration; t >= 0; t -= 0.02) {
+        compiled.timeline.seek(t, false)
+        if (compiled.state[`${lane}.presence`] === 1)
+          return t
+      }
+      return Number.NaN
+    })
+    expect(gone).toEqual([...gone].sort((a, b) => a - b))
+    expect(new Set(gone).size).toBe(5)
+    compiled.timeline.seek(compiled.duration, false)
+    expect(compiled.state['camera.scale']).toBe(1)
   })
 
   it('ends every typed element on its finished text', () => {
