@@ -261,60 +261,69 @@ test('the ambient layer runs without writing to the DOM', async ({ page }) => {
   expect(animation).toBe('idle-drift')
 })
 
-// Required test 1
-test('at the end of the Track the DOM is the prerendered page, with no overrides', async ({ page, request }) => {
-  const prerendered = await (await request.get('')).text()
-  const trackLength = await ready(page)
+function requiredSeekTests() {
+  // Required test 1
+  test('at the end of the Track the DOM is the prerendered page, with no overrides', async ({ page, request }) => {
+    const prerendered = await (await request.get('')).text()
+    const trackLength = await ready(page)
 
-  await scrollTo(page, trackLength / 2)
-  await scrollTo(page, trackLength)
+    await scrollTo(page, trackLength / 2)
+    await scrollTo(page, trackLength)
 
-  const result = await page.evaluate((html) => {
-    const parsed = new DOMParser().parseFromString(html, 'text/html')
-    return {
-      expected: parsed.querySelector('.camera')!.outerHTML,
-      actual: document.querySelector('.camera')!.outerHTML,
-      overrides: document.querySelectorAll('.camera [style], .camera[style]').length,
-      overlayHidden: document.querySelector<HTMLElement>('.overlay')!.hidden,
+    const result = await page.evaluate((html) => {
+      const parsed = new DOMParser().parseFromString(html, 'text/html')
+      return {
+        expected: parsed.querySelector('.camera')!.outerHTML,
+        actual: document.querySelector('.camera')!.outerHTML,
+        overrides: document.querySelectorAll('.camera [style], .camera[style]').length,
+        overlayHidden: document.querySelector<HTMLElement>('.overlay')!.hidden,
+      }
+    }, prerendered)
+
+    expect(result.actual).toBe(result.expected)
+    expect(result.overrides).toBe(0)
+    expect(result.overlayHidden).toBe(true)
+    await expect(page.locator('html')).not.toHaveAttribute('style')
+  })
+
+  // Required test 2
+  test('forward, backward and random seeks to the same t give the same DOM', async ({ page }) => {
+    const trackLength = await ready(page)
+    const stops = Array.from({ length: 9 }, (_, i) => Math.round(trackLength * i / 8))
+
+    const forward = new Map<number, string>()
+    for (const y of stops) {
+      await scrollTo(page, y)
+      forward.set(y, await pinnedHtml(page))
     }
-  }, prerendered)
 
-  expect(result.actual).toBe(result.expected)
-  expect(result.overrides).toBe(0)
-  expect(result.overlayHidden).toBe(true)
-  await expect(page.locator('html')).not.toHaveAttribute('style')
-})
+    for (const y of [...stops].reverse()) {
+      await scrollTo(page, y)
+      expect(await pinnedHtml(page), `backward to ${y}`).toBe(forward.get(y))
+    }
 
-// Required test 2
-test('forward, backward and random seeks to the same t give the same DOM', async ({ page }) => {
-  const trackLength = await ready(page)
-  const stops = Array.from({ length: 9 }, (_, i) => Math.round(trackLength * i / 8))
+    for (const i of [5, 0, 8, 2, 7, 1, 6, 3, 8, 4, 0]) {
+      await scrollTo(page, stops[i]!)
+      expect(await pinnedHtml(page), `random to ${stops[i]}`).toBe(forward.get(stops[i]!))
+    }
+  })
 
-  const forward = new Map<number, string>()
-  for (const y of stops) {
-    await scrollTo(page, y)
-    forward.set(y, await pinnedHtml(page))
-  }
+  // Required test 3
+  test('seeking back to 0 after a full run matches a fresh start', async ({ page }) => {
+    const trackLength = await ready(page)
+    const fresh = await pinnedHtml(page)
+    await scrollTo(page, trackLength + 200)
+    await scrollTo(page, trackLength / 2)
+    await scrollTo(page, 0)
+    expect(await pinnedHtml(page)).toBe(fresh)
+  })
+}
 
-  for (const y of [...stops].reverse()) {
-    await scrollTo(page, y)
-    expect(await pinnedHtml(page), `backward to ${y}`).toBe(forward.get(y))
-  }
+requiredSeekTests()
 
-  for (const i of [5, 0, 8, 2, 7, 1, 6, 3, 8, 4, 0]) {
-    await scrollTo(page, stops[i]!)
-    expect(await pinnedHtml(page), `random to ${stops[i]}`).toBe(forward.get(stops[i]!))
-  }
-})
-
-// Required test 3
-test('seeking back to 0 after a full run matches a fresh start', async ({ page }) => {
-  const trackLength = await ready(page)
-  const fresh = await pinnedHtml(page)
-  await scrollTo(page, trackLength + 200)
-  await scrollTo(page, trackLength / 2)
-  await scrollTo(page, 0)
-  expect(await pinnedHtml(page)).toBe(fresh)
+test.describe('under reduced motion', () => {
+  test.use({ contextOptions: { reducedMotion: 'reduce' } })
+  requiredSeekTests()
 })
 
 // Required test 5

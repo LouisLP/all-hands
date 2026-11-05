@@ -37,7 +37,13 @@ interface ActionOptions {
   cue?: string
 }
 
-export interface MoveAction extends ActionOptions {
+/** For the verbs whose motion can be swapped for a cut, which keeps their end state. */
+interface MotionOptions extends ActionOptions {
+  /** Large motion: under reduced motion the compiler cuts to where it would have ended. */
+  large?: boolean
+}
+
+export interface MoveAction extends MotionOptions {
   verb: 'move'
   to: Target | FreePoint
 }
@@ -48,7 +54,7 @@ export interface RevealAction extends ActionOptions {
 }
 
 /** Drags the element's box out, from its top-left corner to its bottom-right one. */
-export interface BoxAction extends ActionOptions {
+export interface BoxAction extends MotionOptions {
   verb: 'box'
   target: BuildName
 }
@@ -74,7 +80,7 @@ export interface NudgeAction extends ActionOptions {
 }
 
 /** Picks up a copy of `from` and drags it to `target`'s finished place. */
-export interface DupAction extends ActionOptions {
+export interface DupAction extends MotionOptions {
   verb: 'dup'
   target: BuildName
   from: BuildName
@@ -85,7 +91,7 @@ export interface DupAction extends ActionOptions {
  * font, then drags the corner handle until each line reaches its finished size. `opening`
  * lists the lines from the top, with the px size each starts at, which is the first paint's.
  */
-export interface SetTypeAction extends ActionOptions {
+export interface SetTypeAction extends MotionOptions {
   verb: 'setType'
   target: BuildName
   opening: Partial<Record<BuildName, number>>
@@ -141,11 +147,15 @@ export interface RejectAction extends ActionOptions {
 export interface PanAction extends ActionOptions {
   verb: 'pan'
   target: BuildName
+  /** Every pan is large motion. */
+  large: true
 }
 
 /** Zooms out until the whole page fits the viewport. */
 export interface FitAction extends ActionOptions {
   verb: 'fit'
+  /** Every zoom is large motion. */
+  large: true
 }
 
 export type NoteAction = BriefAction | ApproveAction | RejectAction
@@ -183,7 +193,7 @@ export function beat(name: string, lanes: Lanes): Beat {
   return { name, lanes }
 }
 
-export function move(to: Target | FreePoint, options: ActionOptions = {}): MoveAction {
+export function move(to: Target | FreePoint, options: MotionOptions = {}): MoveAction {
   return { verb: 'move', to, ...options }
 }
 
@@ -191,7 +201,7 @@ export function reveal(target: BuildName, options: ActionOptions = {}): RevealAc
   return { verb: 'reveal', target, ...options }
 }
 
-export function box(target: BuildName, options: ActionOptions = {}): BoxAction {
+export function box(target: BuildName, options: MotionOptions = {}): BoxAction {
   return { verb: 'box', target, ...options }
 }
 
@@ -207,11 +217,11 @@ export function nudge(target: BuildName, from: Offset, options: ActionOptions = 
   return { verb: 'nudge', target, from, ...options }
 }
 
-export function dup(target: BuildName, from: BuildName, options: ActionOptions = {}): DupAction {
+export function dup(target: BuildName, from: BuildName, options: MotionOptions = {}): DupAction {
   return { verb: 'dup', target, from, ...options }
 }
 
-export function setType(target: BuildName, opening: SetTypeAction['opening'], options: ActionOptions = {}): SetTypeAction {
+export function setType(target: BuildName, opening: SetTypeAction['opening'], options: MotionOptions = {}): SetTypeAction {
   return { verb: 'setType', target, opening, ...options }
 }
 
@@ -240,9 +250,9 @@ export function reject(text: string, at: Target | FreePoint, options: ActionOpti
 }
 
 export function pan(target: BuildName, options: ActionOptions = {}): PanAction {
-  return { verb: 'pan', target, ...options }
+  return { verb: 'pan', target, large: true, ...options }
 }
 
 export function fit(options: ActionOptions = {}): FitAction {
-  return { verb: 'fit', ...options }
+  return { verb: 'fit', large: true, ...options }
 }

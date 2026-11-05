@@ -10,7 +10,7 @@ const hero: Storyboard = [
     delegator: [brief('Make it a poster.', { x: 30, y: 46 }, { inPlace: true, duration: 2.5 })],
   }),
   beat('Hero: the Designer sets the type', {
-    designer: [setType('title', { name: 32, role: 32 }, { duration: 2.8 })],
+    designer: [setType('title', { name: 32, role: 32 }, { duration: 2.8, large: true })],
   }),
   beat('Hero: the Designer adds the shapes and the button', {
     designer: [
@@ -31,7 +31,7 @@ const hero: Storyboard = [
 const about: Storyboard = [
   beat('About: the Designer lays out grey boxes', {
     camera: [pan('about')],
-    designer: [box('about-panel', { duration: 1.1 }), box('about-body', { duration: 1.1 })],
+    designer: [box('about-panel', { duration: 1.1, large: true }), box('about-body', { duration: 1.1, large: true })],
   }),
   beat('About: the Designer places the text slightly off, then corrects it', {
     designer: [
@@ -54,8 +54,8 @@ const projects: Storyboard = [
   beat('Projects: the Designer makes one card', {
     camera: [pan('work')],
     designer: [
-      box('work-heading'),
-      box('card1'),
+      box('work-heading', { large: true }),
+      box('card1', { large: true }),
       reveal('card1-index', { duration: 0.2 }),
       type('card1-link', { text: PLACEHOLDER_TITLE, duration: 0.3 }),
       type('card1-description', { duration: 0.6 }),
@@ -72,8 +72,8 @@ const projects: Storyboard = [
     delegator: [approve('Yes. Do the rest.', 'card1-details.corner', { duration: 1 })],
   }),
   beat('Projects: the approval releases the Agents, who duplicate the card', {
-    agent1: [dup('card2', 'card1'), reveal('card2-index', { duration: 0.2 }), type('card2-link', { text: PLACEHOLDER_TITLE, duration: 0.3 })],
-    agent2: [dup('card3', 'card1'), reveal('card3-index', { duration: 0.2 }), type('card3-link', { text: PLACEHOLDER_TITLE, duration: 0.3 })],
+    agent1: [dup('card2', 'card1', { large: true }), reveal('card2-index', { duration: 0.2 }), type('card2-link', { text: PLACEHOLDER_TITLE, duration: 0.3 })],
+    agent2: [dup('card3', 'card1', { large: true }), reveal('card3-index', { duration: 0.2 }), type('card3-link', { text: PLACEHOLDER_TITLE, duration: 0.3 })],
   }),
   beat('Projects: the Agents fill a card each, while Backend adds real names and links', {
     agent1: [type('card2-description', { duration: 0.8 }), reveal('card2-stack', { duration: 0.2 })],
@@ -92,7 +92,7 @@ const projects: Storyboard = [
 const contact: Storyboard = [
   beat('Contact: the Designer lays out the closing band', {
     camera: [pan('contact')],
-    designer: [box('contact'), box('contact-button'), type('contact-button', { text: 'Contact', duration: 0.3 })],
+    designer: [box('contact', { large: true }), box('contact-button', { large: true }), type('contact-button', { text: 'Contact', duration: 0.3 })],
   }),
   beat('Contact: Backend adds the real contact link', {
     backend: [replace('contact-button', { duration: 0.4 }), reveal('contact-links', { duration: 0.3 }), reveal('colophon', { duration: 0.3 })],
@@ -135,15 +135,16 @@ const crestPart: Storyboard = [
 
 // The cursors have to land as the Camera does, or a free point misses, and they'd go off
 // with the page they were on. The Delegator can't move, but "Ship it." left them on the hero.
-const RETURN_SECONDS = 1.6
+// Large motion like the Camera's, so under reduced motion they cut along with it.
+const RETURN = { duration: 1.6, large: true }
 
 const landing: Storyboard = [
   beat('Landing: the Camera returns to the hero, and the Team comes with it', {
-    camera: [pan('hero', { duration: RETURN_SECONDS })],
-    backend: [move({ x: 72, y: 30 }, { duration: RETURN_SECONDS })],
-    agent1: [move({ x: 60, y: 62 }, { duration: RETURN_SECONDS })],
-    agent2: [move({ x: 80, y: 66 }, { duration: RETURN_SECONDS })],
-    designer: [move({ x: 48, y: 36 }, { duration: RETURN_SECONDS })],
+    camera: [pan('hero', RETURN)],
+    backend: [move({ x: 72, y: 30 }, RETURN)],
+    agent1: [move({ x: 60, y: 62 }, RETURN)],
+    agent2: [move({ x: 80, y: 66 }, RETURN)],
+    designer: [move({ x: 48, y: 36 }, RETURN)],
   }),
   beat('Landing: Backend leaves first', { backend: [leave({ duration: 0.5 })] }),
   beat('Landing: Agent 1 leaves', { agent1: [leave({ duration: 0.5 })] }),
