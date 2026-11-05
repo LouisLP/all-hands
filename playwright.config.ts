@@ -9,6 +9,8 @@ export default defineConfig({
   testDir: 'tests/e2e',
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
+  // Some tests walk hundreds of scroll stops, and CI runs them about 3x slower than a laptop.
+  timeout: process.env.CI ? 90_000 : 30_000,
   reporter: 'list',
   use: { baseURL: DEPLOYED_URL ?? `http://localhost:${PORT}/all-hands/` },
   webServer: DEPLOYED_URL
