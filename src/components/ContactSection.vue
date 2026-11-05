@@ -13,10 +13,10 @@ import { profile } from '@/content/profile'
         <li>{{ profile.city }}</li>
       </ul>
       <p class="colophon" data-build="colophon">
-        Placeholder colophon. Credit to <a :href="profile.swarm">Swarm</a> by Joel Califa.
+        Set in Anton, Archivo and JetBrains Mono. Built with Vue and GSAP. A page assembled by cursors was Joel Califa's idea first: see <a :href="profile.swarm">Swarm</a>.
       </p>
       <p class="desktop-hint" data-testid="desktop-hint">
-        Placeholder hint. On a desktop, this page builds itself as you scroll.
+        Open this on a desktop and scroll. The page gets built in front of you.
       </p>
     </footer>
   </section>

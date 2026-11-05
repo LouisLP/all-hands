@@ -58,13 +58,13 @@ The visual reference is variant A in the [theme prototype](https://github.com/Lo
 | Cream, Crest or Forest on Mandarin | 2.44–2.67 | Decorative only |
 | Crest on Cream | 1.01 | Needs a border |
 
-Copy is placeholder until the final-copy issue. Source it from [LouisLP/me](https://github.com/LouisLP/me), whose Kabuki and "Calm" rules don't apply here.
+Copy is sourced from [LouisLP/me](https://github.com/LouisLP/me), whose Kabuki and "Calm" rules don't apply here.
 
 ## The Build
 
 Two movements. Sections are built top-down in grey with poster type. Then the Delegator rejects the whole grey page, and colour arrives across it in one go.
 
-The eight parts below are the outline of the Storyboard. Each one is authored as one or more Beats. Brief wording is provisional, and scroll shares are targets reached by tuning Beat durations.
+The eight parts below are the outline of the Storyboard. Each one is authored as one or more Beats. Scroll shares are targets reached by tuning Beat durations.
 
 | # | Part | What happens | Scroll |
 |---|---|---|---|
