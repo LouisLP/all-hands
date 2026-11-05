@@ -10,9 +10,14 @@ const LABELS: Record<Lane, string> = {
 export interface Overlay {
   element: HTMLElement
   cursor: (lane: Lane) => HTMLElement
+  brief: (index: number) => HTMLElement
 }
 
-export function createOverlay(parent: HTMLElement, lanes: Iterable<Lane>): Overlay {
+export function createOverlay(
+  parent: HTMLElement,
+  lanes: Iterable<Lane>,
+  briefs: readonly { lane: Lane, text: string }[],
+): Overlay {
   const element = document.createElement('div')
   element.className = 'overlay'
   element.setAttribute('aria-hidden', 'true')
@@ -32,7 +37,16 @@ export function createOverlay(parent: HTMLElement, lanes: Iterable<Lane>): Overl
     element.append(cursor)
     cursors.set(lane, cursor)
   }
+
+  // Inside its cursor, because a Brief goes where the cursor goes.
+  const bubbles = briefs.map(({ lane, text }) => {
+    const bubble = document.createElement('p')
+    bubble.className = 'brief'
+    bubble.textContent = text
+    cursors.get(lane)!.append(bubble)
+    return bubble
+  })
   parent.append(element)
 
-  return { element, cursor: lane => cursors.get(lane)! }
+  return { element, cursor: lane => cursors.get(lane)!, brief: index => bubbles[index]! }
 }

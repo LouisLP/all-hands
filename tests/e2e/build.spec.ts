@@ -40,7 +40,7 @@ test('the engine and GSAP load in their own chunk, after the page', async ({ pag
 test('the page sits inside the spec\'s structure', async ({ page }) => {
   await ready(page)
   await expect(page.locator('.build > main.pinned > .camera [data-build="hero"]')).toHaveCount(1)
-  await expect(page.locator('.build > main.pinned > .overlay[aria-hidden="true"] .cursor')).toHaveCount(1)
+  await expect(page.locator('.build > main.pinned > .overlay[aria-hidden="true"] .cursor')).toHaveCount(2)
   await expect(page.locator('.build > .track')).toHaveCount(1)
 })
 
@@ -73,7 +73,7 @@ test('it measures after the fonts are ready', async ({ page }) => {
 test('the Beat scrubs: the cursor reaches its anchor and the shapes fade in', async ({ page }) => {
   const trackLength = await ready(page)
   const shapes = page.locator('[data-build="hero-shapes"]')
-  const cursor = page.locator('.cursor')
+  const cursor = page.locator('.cursor[data-teammate="designer"]')
 
   await expect(cursor).toBeHidden()
   await expect(shapes).toHaveCSS('opacity', '0')
@@ -179,4 +179,101 @@ test('below the Track the page scrolls on natively to the footer', async ({ page
   await ready(page)
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
   await expect(page.locator('[data-build="colophon"]')).toBeInViewport()
+})
+
+// Finds where the Camera is furthest out, by walking the Track.
+async function zoomedOut(page: Page, trackLength: number) {
+  let lowest = { y: 0, width: Number.POSITIVE_INFINITY }
+  for (let y = 0; y < trackLength; y += Math.ceil(trackLength / 60)) {
+    await scrollTo(page, y)
+    const width = await page.locator('.camera').evaluate(el => el.getBoundingClientRect().width)
+    if (width < lowest.width)
+      lowest = { y, width }
+  }
+  await scrollTo(page, lowest.y)
+  return lowest.y
+}
+
+// Required test 7
+for (const viewport of [
+  { width: 1024, height: 600 },
+  { width: 1024, height: 768 },
+  { width: 1440, height: 900 },
+  { width: 1920, height: 1080 },
+  { width: 2560, height: 1440 },
+]) {
+  test(`the whole page fits the zoomed-out view at ${viewport.width}x${viewport.height}`, async ({ browser, baseURL }) => {
+    const context = await browser.newContext({ viewport, baseURL })
+    const page = await context.newPage()
+    const trackLength = await ready(page)
+    await zoomedOut(page, trackLength)
+
+    const box = await page.locator('.camera').evaluate((el) => {
+      const { left, top, right, bottom, width } = el.getBoundingClientRect()
+      return { left, top, right, bottom, width, offsetWidth: (el as HTMLElement).offsetWidth }
+    })
+    expect(box.width).toBeLessThan(box.offsetWidth)
+    expect(box.left).toBeGreaterThanOrEqual(0)
+    expect(box.top).toBeGreaterThanOrEqual(0)
+    expect(box.right).toBeLessThanOrEqual(viewport.width)
+    expect(box.bottom).toBeLessThanOrEqual(viewport.height)
+    await context.close()
+  })
+}
+
+test('a cursor and a Brief stay at screen size while zoomed out, and on their target', async ({ page }) => {
+  const trackLength = await ready(page)
+  const delegator = page.locator('.cursor[data-teammate="delegator"]')
+  const pointer = delegator.locator('svg')
+  const brief = delegator.locator('.brief')
+
+  // Before the Camera moves, wherever the first Brief is up.
+  let atFullSize: { pointer: number, label: number, brief: number } | undefined
+  for (let y = 0; y < trackLength && !atFullSize; y += 40) {
+    await scrollTo(page, y)
+    if (await brief.first().isVisible()) {
+      const transform = await page.locator('.camera').evaluate(el => (el as HTMLElement).style.transform)
+      expect(transform).toBe('none')
+      atFullSize = {
+        pointer: (await pointer.boundingBox())!.height,
+        label: (await delegator.locator('.cursor-label').boundingBox())!.height,
+        brief: (await brief.first().boundingBox())!.height,
+      }
+    }
+  }
+  expect(atFullSize).toBeDefined()
+
+  const start = await zoomedOut(page, trackLength)
+  let shown = false
+  for (let y = start; y < trackLength && !shown; y += 40) {
+    await scrollTo(page, y)
+    shown = await brief.last().isVisible()
+  }
+  expect(shown).toBe(true)
+
+  expect((await pointer.boundingBox())!.height).toBeCloseTo(atFullSize!.pointer, 1)
+  expect((await delegator.locator('.cursor-label').boundingBox())!.height).toBeCloseTo(atFullSize!.label, 1)
+  expect((await brief.last().boundingBox())!.height).toBeCloseTo(atFullSize!.brief, 1)
+
+  const { cursor, target } = await page.evaluate(() => {
+    const cursor = document.querySelector('.cursor[data-teammate="delegator"]')!.getBoundingClientRect()
+    const target = document.querySelector('[data-build="work"]')!.getBoundingClientRect()
+    return { cursor: { x: cursor.left, y: cursor.top }, target: { x: target.left + target.width / 2, y: target.top + target.height / 2 } }
+  })
+  expect(Math.hypot(cursor.x - target.x, cursor.y - target.y)).toBeLessThan(1)
+})
+
+test('the Camera ends with no transform before the page unpins, and clears at the end', async ({ page }) => {
+  const trackLength = await ready(page)
+  const camera = page.locator('.camera')
+  await zoomedOut(page, trackLength)
+  await expect(camera).not.toHaveCSS('transform', 'none')
+
+  await scrollTo(page, trackLength - 1)
+  await expect(camera).toHaveCSS('transform', 'none')
+  expect(await camera.getAttribute('style')).toBe('transform: none;')
+
+  await scrollTo(page, trackLength)
+  await expect(camera).toHaveCSS('transform', 'none')
+  expect(await camera.getAttribute('style')).toBeNull()
 })

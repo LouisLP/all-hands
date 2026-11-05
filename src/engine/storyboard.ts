@@ -41,16 +41,36 @@ export interface RevealAction extends ActionOptions {
   target: BuildName
 }
 
-export type Action = MoveAction | RevealAction
-export type Verb = Action['verb']
-
-/** Each lane runs in sequence. The Delegator gets brief, approve and reject in #16, and makes no edits. */
-export interface Lanes {
-  designer?: readonly (MoveAction | RevealAction)[]
-  delegator?: readonly never[]
+/** The cursor goes to `at`, then the Brief shows for `duration` and clears. */
+export interface BriefAction extends ActionOptions {
+  verb: 'brief'
+  text: string
+  at: Target | FreePoint
 }
 
-export type Lane = keyof Lanes
+/** Back to full size, with the top of `target` at the top of the viewport, as far as the page allows. */
+export interface PanAction extends ActionOptions {
+  verb: 'pan'
+  target: BuildName
+}
+
+/** Zooms out until the whole page fits the viewport. */
+export interface FitAction extends ActionOptions {
+  verb: 'fit'
+}
+
+export type Action = MoveAction | RevealAction | BriefAction | PanAction | FitAction
+export type Verb = Action['verb']
+
+/** Each lane runs in sequence. The Delegator gets approve and reject in #16, and makes no edits. */
+export interface Lanes {
+  designer?: readonly (MoveAction | RevealAction)[]
+  delegator?: readonly BriefAction[]
+  camera?: readonly (PanAction | FitAction)[]
+}
+
+/** The lanes with a cursor. */
+export type Lane = Exclude<keyof Lanes, 'camera'>
 
 export interface Beat {
   name: string
@@ -69,4 +89,16 @@ export function move(to: Target | FreePoint, options: ActionOptions = {}): MoveA
 
 export function reveal(target: BuildName, options: ActionOptions = {}): RevealAction {
   return { verb: 'reveal', target, ...options }
+}
+
+export function brief(text: string, at: Target | FreePoint, options: ActionOptions = {}): BriefAction {
+  return { verb: 'brief', text, at, ...options }
+}
+
+export function pan(target: BuildName, options: ActionOptions = {}): PanAction {
+  return { verb: 'pan', target, ...options }
+}
+
+export function fit(options: ActionOptions = {}): FitAction {
+  return { verb: 'fit', ...options }
 }
