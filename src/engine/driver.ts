@@ -9,6 +9,7 @@ export function driveByScroll(length: number, onProgress: (progress: number) => 
     end: length,
     onUpdate: self => onProgress(self.progress),
   })
-  onProgress(trigger.progress)
+  // Read from scroll directly, because the trigger hasn't refreshed yet on a restored scroll.
+  onProgress(Math.min(1, window.scrollY / length))
   return () => trigger.kill()
 }

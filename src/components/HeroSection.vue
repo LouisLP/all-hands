@@ -11,7 +11,7 @@ import { profile } from '@/content/profile'
         <p class="label">{{ profile.edition }}</p>
       </div>
       <RegistrationMarks data-build="hero-marks-top" />
-      <h1 id="hero-title" class="display title">
+      <h1 id="hero-title" class="display title" tabindex="-1">
         <span class="name" data-build="name">{{ profile.name }}</span>
         <span class="role" data-build="role">{{ profile.role }}</span>
       </h1>
@@ -61,6 +61,11 @@ import { profile } from '@/content/profile'
 .title {
   align-self: center;
   text-wrap: wrap;
+}
+
+/* Focused only by a skip, and nothing can be done to a heading. */
+.title:focus {
+  outline: none;
 }
 
 .name,

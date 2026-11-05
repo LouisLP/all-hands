@@ -10,7 +10,7 @@ import { chromium } from '@playwright/test'
 import { preview } from 'vite'
 
 const KB = 1024
-const LIMITS = { lcpMs: 2500, cls: 0.1, initialJsKb: 40, fontsKb: 100, everythingKb: 250 }
+const LIMITS = { lcpMs: 2500, cls: 0.1, initialJsKb: 40, fontsKb: 100, everythingKb: 250, engineKb: 60 }
 const DIST = 'dist'
 const PORT = 4174
 
@@ -28,6 +28,10 @@ const gz = path => gzipSync(readFileSync(path), { level: 9 }).length
 const named = [...html.matchAll(/(?:src|href)="\/all-hands\/([^"#]+\.(?:js|css))"/g)].map(m => join(DIST, m[1]))
 const js = named.filter(p => p.endsWith('.js'))
 const fonts = files(join(DIST, 'fonts')).filter(p => p.endsWith('.woff2'))
+
+// Every other chunk loads only when the load check passes.
+const lazyJs = files(join(DIST, 'assets')).filter(p => p.endsWith('.js') && !js.includes(p))
+const engine = lazyJs.reduce((sum, p) => sum + gz(p), 0)
 
 const initialJs = js.reduce((sum, p) => sum + gz(p), 0)
 const fontBytes = fonts.reduce((sum, p) => sum + statSync(p).size, 0)
@@ -59,6 +63,7 @@ const rows = [
   ['Initial JS, gzip (KB)', initialJs / KB, LIMITS.initialJsKb, 1],
   ['Fonts, total (KB)', fontBytes / KB, LIMITS.fontsKb, 1],
   ['Everything, gzip (KB)', everything / KB, LIMITS.everythingKb, 1],
+  ['Engine chunk, gzip (KB)', engine / KB, LIMITS.engineKb, 1],
 ]
 let failed = false
 for (const [name, value, limit, digits] of rows) {

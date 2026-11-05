@@ -15,6 +15,9 @@ import { profile } from '@/content/profile'
       <p class="colophon" data-build="colophon">
         Placeholder colophon. Credit to <a :href="profile.swarm">Swarm</a> by Joel Califa.
       </p>
+      <p class="desktop-hint" data-testid="desktop-hint">
+        Placeholder hint. On a desktop, this page builds itself as you scroll.
+      </p>
     </footer>
   </section>
 </template>

@@ -12,6 +12,64 @@
   transform-origin: 0 0;
 }
 
+/* While pinned, nothing should hold scroll in place. Otherwise narrowing mid-Track can land off the top. */
+html:has(.overlay:not([hidden])) {
+  overflow-anchor: none;
+}
+
+/* The first paint on a passing device. Everything else stays in layout, hidden, so the page's
+   fonts still load. The engine lifts this in the same task it measures in, so it never paints. */
+html[data-entry='pending'] {
+  --mandarin: #b4b4b2;
+  --forest: #4a4a48;
+  --cream: #f0f0ee;
+  --crest: #fff;
+  --ink: #1b1b1b;
+}
+
+html[data-entry='pending'] body {
+  background: var(--mandarin);
+}
+
+html[data-entry='pending'] .camera {
+  visibility: hidden;
+}
+
+html[data-entry='pending'] :is([data-build='name'], [data-build='role']) {
+  visibility: visible;
+  font: 600 2rem/1.2 system-ui, sans-serif;
+  text-transform: none;
+}
+
+/* Inside the pinned page, so it's on screen for the Track and scrolls away with the hero. */
+.build-line {
+  display: none;
+  position: absolute;
+  top: calc(100svh - 2.5rem);
+  left: var(--gutter);
+  padding: 1px 8px;
+  background: #1b1b1b;
+  color: #f0f0ee;
+}
+
+html:is([data-entry='pending'], [data-entry='running']) .build-line {
+  display: block;
+}
+
+.pinned:has(> .overlay[hidden]) .build-line {
+  display: none;
+}
+
+/* Only the inline script sets `hint`, so a skip on a desktop and no JS never see this. */
+.desktop-hint {
+  display: none;
+  text-transform: none;
+}
+
+html[data-entry='hint'] .desktop-hint {
+  display: block;
+}
+
 .overlay {
   position: absolute;
   inset: 0 0 auto;
