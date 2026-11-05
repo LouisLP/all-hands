@@ -5,6 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Louis LP, Design Engineer</title>
     <meta name="description" content="Portfolio of Louis LP, a design engineer in Berlin." />
+    <script>
+      // Decides before first paint whether the Build runs. src/entry.ts describes the states.
+      (function () {
+        var root = document.documentElement
+        if (!matchMedia('(min-width: 1024px) and (hover: hover) and (pointer: fine)').matches) {
+          root.dataset.entry = 'hint'
+          return
+        }
+        var skip = location.hash.length > 1
+        try {
+          if (skip)
+            sessionStorage.setItem('all-hands:skip', '1')
+          else
+            skip = sessionStorage.getItem('all-hands:skip') !== null
+        }
+        catch (e) {}
+        if (skip) {
+          history.scrollRestoration = 'auto'
+          return
+        }
+        // The engine restores scroll itself, because the Track doesn't exist yet at load.
+        history.scrollRestoration = 'manual'
+        root.dataset.entry = 'pending'
+        setTimeout(function () {
+          if (root.dataset.entry === 'pending')
+            delete root.dataset.entry
+        }, 3000)
+      })()
+    </script>
     <link rel="preload" href="%BASE_URL%fonts/anton-400.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="%BASE_URL%fonts/archivo-600.woff2" as="font" type="font/woff2" crossorigin />
   </head>

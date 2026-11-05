@@ -87,6 +87,11 @@ for (const [width, height] of [[320, 568], [360, 740], [568, 320], [768, 1024], 
   test.describe(`${width}x${height}`, () => {
     test.use({ viewport: { width, height } })
 
+    // A remembered skip, because a passing width otherwise starts on the neutral canvas.
+    test.beforeEach(async ({ page }) => {
+      await page.addInitScript(() => sessionStorage.setItem('all-hands:skip', '1'))
+    })
+
     test('nothing overflows sideways', async ({ page }) => {
       await page.goto('')
       await page.evaluate(() => document.fonts.ready)

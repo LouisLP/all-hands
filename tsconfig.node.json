@@ -11,5 +11,5 @@
     "strict": true,
     "noUncheckedIndexedAccess": true
   },
-  "include": ["env.d.ts", "vite.config.ts", "playwright.config.ts", "tests/**/*", "src/engine/**/*", "src/storyboard.ts"]
+  "include": ["env.d.ts", "vite.config.ts", "playwright.config.ts", "tests/**/*", "src/engine/**/*", "src/entry.ts", "src/storyboard.ts"]
 }
