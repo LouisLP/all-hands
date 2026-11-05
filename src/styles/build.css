@@ -1,0 +1,50 @@
+/* Without the engine there's no Track, so the sticky page is simply in flow. */
+.build {
+  overflow-x: clip;
+}
+
+.pinned {
+  position: sticky;
+  top: 0;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 100svh;
+  overflow: clip;
+  pointer-events: none;
+}
+
+.overlay[hidden] {
+  display: none;
+}
+
+.cursor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  will-change: transform;
+}
+
+.cursor svg {
+  display: block;
+  fill: var(--cursor);
+  stroke: #012a20;
+}
+
+.cursor-label {
+  display: block;
+  width: max-content;
+  margin-inline-start: 12px;
+  padding: 1px 6px;
+  background: var(--cursor);
+  color: var(--cursor-text);
+  font: 500 0.75rem/1.4 var(--font-mono);
+}
+
+/* Literal values, because cursors keep their colours while the page's tokens go neutral. */
+.cursor[data-teammate='designer'] {
+  --cursor: #fd550a;
+  --cursor-text: #012a20;
+}

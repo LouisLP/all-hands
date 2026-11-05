@@ -61,6 +61,17 @@ test('hydrates cleanly and loads nothing from other origins', async ({ page, bas
   expect(foreign).toEqual([])
 })
 
+test('hydrates the prerendered page instead of rendering it again', async ({ page }) => {
+  await page.addInitScript(() => {
+    new MutationObserver((records) => {
+      if (records.some(r => [...r.removedNodes].some(n => n instanceof Element && n.querySelector('#hero, #contact'))))
+        document.documentElement.dataset.remounted = 'true'
+    }).observe(document, { subtree: true, childList: true })
+  })
+  await page.goto('', { waitUntil: 'networkidle' })
+  await expect(page.locator('html')).not.toHaveAttribute('data-remounted')
+})
+
 test('self-hosted fonts are used, and nothing animates', async ({ page }) => {
   await page.goto('')
   await page.evaluate(() => document.fonts.ready)
