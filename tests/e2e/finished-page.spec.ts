@@ -3,10 +3,10 @@ import { expect, test } from '@playwright/test'
 import { contrastRatio, requiredRatio } from '../support/contrast'
 
 const BUILD_NAMES = [
-  'hero', 'hero-meta', 'hero-marks-top', 'name', 'role', 'hero-marks-bottom', 'hero-intro', 'hero-button', 'hero-shapes',
-  'about', 'about-panel', 'about-label', 'about-heading', 'about-body',
+  'hero', 'hero-meta', 'hero-marks-top', 'title', 'name', 'role', 'hero-marks-bottom', 'hero-intro', 'hero-button', 'hero-shapes',
+  'about', 'about-panel', 'about-label', 'about-heading', 'about-body', 'about-body1', 'about-body2',
   'work', 'work-heading',
-  ...[1, 2, 3].flatMap(n => [`card${n}`, `card${n}-index`, `card${n}-title`, `card${n}-link`, `card${n}-details`]),
+  ...[1, 2, 3].flatMap(n => ['', '-index', '-title', '-link', '-details', '-description', '-stack', '-arrow'].map(part => `card${n}${part}`)),
   'contact', 'contact-button', 'footer', 'contact-links', 'colophon',
 ]
 
@@ -73,6 +73,8 @@ test('hydrates the prerendered page instead of rendering it again', async ({ pag
 })
 
 test('self-hosted fonts are used, and nothing animates', async ({ page }) => {
+  // A remembered skip, because the Build animates its cursors and opens in system type.
+  await page.addInitScript(() => sessionStorage.setItem('all-hands:skip', '1'))
   await page.goto('')
   await page.evaluate(() => document.fonts.ready)
   const state = await page.evaluate(() => ({

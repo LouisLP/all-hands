@@ -10,7 +10,7 @@ import { profile } from '@/content/profile'
         <h2 id="about-title" class="display heading" data-build="about-heading">{{ profile.aboutHeading }}</h2>
       </div>
       <div class="body" data-build="about-body">
-        <p v-for="paragraph in profile.about" :key="paragraph">{{ paragraph }}</p>
+        <p v-for="(paragraph, index) in profile.about" :key="paragraph" :data-build="`about-body${index + 1}`">{{ paragraph }}</p>
       </div>
     </div>
   </section>

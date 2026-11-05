@@ -19,12 +19,12 @@ const paddedIndex = computed(() => String(props.index).padStart(2, '0'))
       <a :href="project.href" :data-build="`${buildName}-link`">{{ project.title }}</a>
     </h3>
     <div class="details" :data-build="`${buildName}-details`">
-      <p>{{ project.description }}</p>
-      <ul class="stack mono">
+      <p :data-build="`${buildName}-description`">{{ project.description }}</p>
+      <ul class="stack mono" :data-build="`${buildName}-stack`">
         <li v-for="tool in project.stack" :key="tool" class="tag">{{ tool }}</li>
       </ul>
     </div>
-    <svg class="arrow" viewBox="0 0 24 24" aria-hidden="true">
+    <svg class="arrow" viewBox="0 0 24 24" aria-hidden="true" :data-build="`${buildName}-arrow`">
       <path d="M0 9h14V3l10 9-10 9v-6H0z" />
     </svg>
   </article>

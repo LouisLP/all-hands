@@ -9,6 +9,7 @@
 }
 
 .camera {
+  background: var(--canvas, transparent);
   transform-origin: 0 0;
 }
 
@@ -37,19 +38,23 @@ html[data-entry='pending'] .camera {
 
 html[data-entry='pending'] :is([data-build='name'], [data-build='role']) {
   visibility: visible;
-  font: 600 2rem/1.2 system-ui, sans-serif;
+  font: 600 2rem/1 system-ui, sans-serif;
   text-transform: none;
 }
 
-/* Inside the pinned page, so it's on screen for the Track and scrolls away with the hero. */
+/* Inside the pinned page, so it's on screen for the Track and scrolls away with the hero. Top
+   centre, because the hero's foot has its intro, button and figure along the bottom. */
 .build-line {
   display: none;
   position: absolute;
-  top: calc(100svh - 2.5rem);
-  left: var(--gutter);
+  top: 8px;
+  left: 50%;
+  z-index: 1;
+  translate: -50% 0;
   padding: 1px 8px;
   background: #1b1b1b;
   color: #f0f0ee;
+  text-transform: none;
 }
 
 html:is([data-entry='pending'], [data-entry='running']) .build-line {
@@ -68,6 +73,27 @@ html:is([data-entry='pending'], [data-entry='running']) .build-line {
 
 html[data-entry='hint'] .desktop-hint {
   display: block;
+}
+
+/* The caret sits at the end of the characters typed so far. */
+.typed[data-typing]::after {
+  content: '';
+  display: inline-block;
+  width: 0.06em;
+  height: 0.9em;
+  margin-inline-start: 0.04em;
+  background: currentColor;
+  vertical-align: baseline;
+}
+
+.selection {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border: 1px solid #fd550a;
+  background:
+    linear-gradient(#fd550a 0 0) 100% 100% / 9px 9px no-repeat;
+  will-change: transform;
 }
 
 .overlay {
@@ -119,13 +145,91 @@ html[data-entry='hint'] .desktop-hint {
   font: 500 0.875rem/1.4 var(--font-mono);
 }
 
+/* Marks that say a note is a verdict, without adding to its text. */
+.brief[data-kind='approve']::before {
+  content: '✓ ' / '';
+}
+
+.brief[data-kind='reject']::before {
+  content: '✕ ' / '';
+}
+
 /* Literal values, because cursors keep their colours while the page's tokens go neutral. */
+.cursor[data-teammate='delegator'] {
+  --cursor: #012a20;
+  --cursor-text: #f3e8d2;
+}
+
 .cursor[data-teammate='designer'] {
   --cursor: #fd550a;
   --cursor-text: #012a20;
 }
 
-.cursor[data-teammate='delegator'] {
-  --cursor: #012a20;
+.cursor[data-teammate='backend'] {
+  --cursor: #015d47;
   --cursor-text: #f3e8d2;
+}
+
+.cursor[data-teammate^='agent'] {
+  --cursor: #f3e8d2;
+  --cursor-text: #015d47;
+}
+
+.cursor[data-teammate^='agent'] svg {
+  stroke: #015d47;
+}
+
+.cursor[data-teammate^='agent'] :is(.cursor-label, .brief) {
+  outline: 1px solid #015d47;
+  outline-offset: -1px;
+}
+
+/*
+ * The ambient layer. CSS on wall-clock time, over the scrubbed state: it adds no attributes,
+ * so seeks stay deterministic, and it goes away with the overlay and the typed spans.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .typed[data-typing]::after {
+    animation: caret-blink 1s steps(2, jump-none) infinite;
+  }
+
+  .cursor-body {
+    animation: idle-drift 5s ease-in-out infinite alternate;
+  }
+
+  .cursor[data-teammate='designer'] .cursor-body {
+    animation-delay: -1.3s;
+  }
+
+  .cursor[data-teammate='backend'] .cursor-body {
+    animation-delay: -2.1s;
+  }
+
+  .cursor[data-teammate='agent1'] .cursor-body {
+    animation-delay: -3.4s;
+  }
+
+  .cursor[data-teammate='agent2'] .cursor-body {
+    animation-delay: -4.2s;
+  }
+}
+
+@keyframes caret-blink {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes idle-drift {
+  from {
+    transform: translate(-1.5px, 1px);
+  }
+
+  to {
+    transform: translate(1.5px, -1px);
+  }
 }
