@@ -43,7 +43,7 @@ The visual reference is variant A in the [theme prototype](https://github.com/Lo
 |---|---|---|
 | Mandarin | `#FD550A` | Hero field and one project band, with Ink text only |
 | Forest | `#015D47` | About panel and one project band with Cream text; decorative shapes on Mandarin |
-| Cream | `#F3E8D2` (estimated) | Text on Forest and Ink; quiet bands with Forest text |
+| Cream | `#F3E8D2` | Text on Forest and Ink; quiet bands with Forest text |
 | Crest | `#E0F354` | "Get in touch" only. The hero button has an Ink border on Mandarin. The closing band has Ink text and sits on Ink |
 | Ink | `#012A20` | Headline on Mandarin, section header, footer |
 
