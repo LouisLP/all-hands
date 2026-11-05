@@ -38,6 +38,30 @@ test('the built index.html already holds the page', async ({ request }) => {
     expect(html).toContain(text)
 })
 
+test('link previews name the page and a 1200x630 image of it', async ({ page, request }) => {
+  await page.goto('')
+  const content = (selector: string) => page.locator(`meta[${selector}]`).getAttribute('content')
+  const title = await page.title()
+  const description = await content('name="description"')
+  const imageUrl = 'https://louislp.github.io/all-hands/og-image.png'
+
+  expect(await content('property="og:type"')).toBe('website')
+  expect(await content('property="og:url"')).toBe('https://louislp.github.io/all-hands/')
+  expect(await content('property="og:title"')).toBe(title)
+  expect(await content('property="og:description"')).toBe(description)
+  expect(await content('property="og:image"')).toBe(imageUrl)
+  expect(await content('name="twitter:card"')).toBe('summary_large_image')
+  expect(await content('name="twitter:title"')).toBe(title)
+  expect(await content('name="twitter:description"')).toBe(description)
+  expect(await content('name="twitter:image"')).toBe(imageUrl)
+
+  // A PNG holds its width and height at bytes 16 and 20.
+  const image = await request.get('og-image.png')
+  expect(image.headers()['content-type']).toBe('image/png')
+  const png = await image.body()
+  expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([1200, 630])
+})
+
 test('every Build target has exactly one data-build name', async ({ page }) => {
   await page.goto('')
   const names = await page.locator('[data-build]').evaluateAll(els => els.map(el => el.getAttribute('data-build')))

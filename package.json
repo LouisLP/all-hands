@@ -14,7 +14,8 @@
     "test:unit": "vitest run",
     "test:e2e": "playwright test",
     "budget": "node scripts/check-load-budget.mjs",
-    "budget:runtime": "node scripts/check-runtime-budget.mjs"
+    "budget:runtime": "node scripts/check-runtime-budget.mjs",
+    "capture:link-preview": "node scripts/capture-link-preview.mjs"
   },
   "dependencies": {
     "@unhead/vue": "^3.4.3",
