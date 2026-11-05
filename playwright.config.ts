@@ -2,19 +2,25 @@ import { defineConfig, devices } from '@playwright/test'
 
 // Overridable, so worktrees running side by side don't test each other's server.
 const PORT = Number(process.env.E2E_PORT ?? 4173)
+// Set it to run the suite against a deployed copy instead of a local build.
+const DEPLOYED_URL = process.env.E2E_BASE_URL
 
 export default defineConfig({
   testDir: 'tests/e2e',
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
+  // Some tests walk hundreds of scroll stops, and CI runs them about 3x slower than a laptop.
+  timeout: process.env.CI ? 90_000 : 30_000,
   reporter: 'list',
-  use: { baseURL: `http://localhost:${PORT}/all-hands/` },
-  webServer: {
-    command: `pnpm build && pnpm preview --port ${PORT} --strictPort`,
-    url: `http://localhost:${PORT}/all-hands/`,
-    reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
-  },
+  use: { baseURL: DEPLOYED_URL ?? `http://localhost:${PORT}/all-hands/` },
+  webServer: DEPLOYED_URL
+    ? undefined
+    : {
+        command: `pnpm build && pnpm preview --port ${PORT} --strictPort`,
+        url: `http://localhost:${PORT}/all-hands/`,
+        reuseExistingServer: !process.env.CI,
+        timeout: 120_000,
+      },
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
     { name: 'firefox', use: { ...devices['Desktop Firefox'] } },

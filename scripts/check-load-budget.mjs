@@ -1,4 +1,5 @@
 // The spec's load budget, measured on dist/. Run `pnpm build` first.
+// Pass a URL to run Lighthouse against that deployed copy instead of a local server.
 // Lighthouse needs a Chrome, so this uses the one Playwright installed.
 import { execFile } from 'node:child_process'
 import { readdirSync, readFileSync, statSync } from 'node:fs'
@@ -37,14 +38,24 @@ const initialJs = js.reduce((sum, p) => sum + gz(p), 0)
 const fontBytes = fonts.reduce((sum, p) => sum + statSync(p).size, 0)
 const everything = [join(DIST, 'index.html'), ...named].reduce((sum, p) => sum + gz(p), 0) + fontBytes
 
-const server = await preview({ preview: { port: PORT, strictPort: true } })
+// Sizes always come from dist/, so a deployed URL has to be serving that same build.
+const deployedUrl = process.argv[2]
+if (deployedUrl) {
+  const deployedHtml = await (await fetch(deployedUrl)).text()
+  if (deployedHtml !== html) {
+    console.error(`${deployedUrl} isn't serving this dist/. Build the deployed commit first.`)
+    process.exit(1)
+  }
+}
+
+const server = deployedUrl ? undefined : await preview({ preview: { port: PORT, strictPort: true } })
 const report = join('node_modules', '.tmp', 'lighthouse.json')
 try {
   // Async, because the preview server shares this process and has to keep answering.
   await promisify(execFile)('pnpm', [
     'dlx',
     'lighthouse@12',
-    `http://localhost:${PORT}/all-hands/`,
+    deployedUrl ?? `http://localhost:${PORT}/all-hands/`,
     '--quiet',
     '--only-categories=performance',
     '--output=json',
@@ -53,7 +64,7 @@ try {
   ], { env: { ...process.env, CHROME_PATH: chromium.executablePath() } })
 }
 finally {
-  await server.close()
+  await server?.close()
 }
 const { audits } = JSON.parse(readFileSync(report, 'utf8'))
 
