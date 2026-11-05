@@ -8,6 +8,10 @@
   top: 0;
 }
 
+.camera {
+  transform-origin: 0 0;
+}
+
 .overlay {
   position: absolute;
   inset: 0 0 auto;
@@ -43,8 +47,27 @@
   font: 500 0.75rem/1.4 var(--font-mono);
 }
 
+/* Above the pointer, because the name label sits below it. */
+.brief {
+  position: absolute;
+  bottom: 100%;
+  left: 12px;
+  width: max-content;
+  max-width: 24rem;
+  margin-block-end: 4px;
+  padding: 6px 10px;
+  background: var(--cursor);
+  color: var(--cursor-text);
+  font: 500 0.875rem/1.4 var(--font-mono);
+}
+
 /* Literal values, because cursors keep their colours while the page's tokens go neutral. */
 .cursor[data-teammate='designer'] {
   --cursor: #fd550a;
   --cursor-text: #012a20;
+}
+
+.cursor[data-teammate='delegator'] {
+  --cursor: #012a20;
+  --cursor-text: #f3e8d2;
 }

@@ -10,6 +10,7 @@ export function measure(camera: HTMLElement): Layout {
   }
   return {
     viewport: { width: document.documentElement.clientWidth, height: window.innerHeight },
+    page: { width: origin.width, height: origin.height },
     rects,
   }
 }

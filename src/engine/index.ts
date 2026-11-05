@@ -31,7 +31,7 @@ export function createBuild({ root, storyboard, onPhase }: BuildOptions): Build 
   function start() {
     const compiled = compile(storyboard, measure(camera))
     const lanes = new Set(compiled.rows.flatMap(({ node }) => (node.kind === 'cursor' ? [node.lane] : [])))
-    const overlay = createOverlay(pinned, lanes)
+    const overlay = createOverlay(pinned, lanes, compiled.briefs)
     const drawing = createDrawing(compiled.rows, compiled.state, camera, overlay)
 
     const track = document.createElement('div')
